@@ -110,6 +110,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DICOMViewer.Helper\CTSliceInfoCollection.cs" />
+    <Compile Include="DICOMViewer.Parsing\DICOMtags.cs" />
     <Compile Include="DICOMViewer.Helper\CTSliceInfo.cs" />
     <Compile Include="DICOMViewer.Parsing\DICOMParser.cs" />
     <Compile Include="DICOMViewer.Parsing\DICOMTagInfo.cs" />

@@ -46,18 +46,18 @@ namespace DICOMViewer.Parsing
             // The Z-Value is tried to be determined either from 
             //    - 'Image Position Patient' attribute (0020,0032) or from
             //    - 'Slice Location' attribute (0020,1041)
-            if (DICOMParserUtility.DoesDICOMAttributeExist(this.XDocument, "(0020,0032)"))
+            if (DICOMParserUtility.DoesDICOMAttributeExist(this.XDocument, DICOMTAG.IMAGE_POSITION_PATIENT))
             {
                 // 'Image Position Patient' attribute will be encoded as "x\y\z"
-                string aImagePositionPatient = DICOMParserUtility.GetDICOMAttributeAsString(this.XDocument, "(0020,0032)");
+                string aImagePositionPatient = DICOMParserUtility.GetDICOMAttributeAsString(this.XDocument, DICOMTAG.IMAGE_POSITION_PATIENT);
                 string[] split = aImagePositionPatient.Split(new Char[] { '\\' });
                 this.SortOrder = Convert.ToDouble(split[2], CultureInfo.InvariantCulture);
             }
             else
             {
-                if (DICOMParserUtility.DoesDICOMAttributeExist(this.XDocument, "(0020,1041)"))
+                if (DICOMParserUtility.DoesDICOMAttributeExist(this.XDocument, DICOMTAG.SLICE_LOCATION))
                 {
-                    this.SortOrder = DICOMParserUtility.GetDICOMAttributeAsDouble(this.XDocument, "(0020,1041)");
+                    this.SortOrder = DICOMParserUtility.GetDICOMAttributeAsDouble(this.XDocument, DICOMTAG.SLICE_LOCATION);
                 }
             }
         }

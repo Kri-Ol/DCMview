@@ -8,6 +8,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using System.Xml.Linq;
 
+using DICOMViewer.Parsing;
 
 namespace DICOMViewer.Helper
 {
@@ -16,13 +17,16 @@ namespace DICOMViewer.Helper
     public class CTSliceInfo
     {
         private XDocument mXDocument = null;
-        private string mFileName = null;
+        private string    mFileName  = null;
 
         private int mColumnCount = -1;
-        private int mRowCount = -1;
+        private int mRowCount    = -1;
+        private int mSliceLoc    = -1;
+
         private double mUpperLeft_X = -1;
         private double mUpperLeft_Y = -1;
         private double mUpperLeft_Z = -1;
+
         private double mPixelSpacing_X = -1;
         private double mPixelSpacing_Y = -1;
         
@@ -30,8 +34,10 @@ namespace DICOMViewer.Helper
         private WriteableBitmap mBitmap = null;
 
         // Public properties
+        public string FileName { get { return mFileName;  } }
         public int ColumnCount { get { return mColumnCount; } }
         public int RowCount { get { return mRowCount; } }
+        public int SliceLoc { get { return mSliceLoc; } }
         public double UpperLeft_X { get { return mUpperLeft_X; } }
         public double UpperLeft_Y { get { return mUpperLeft_Y; } }
         public double UpperLeft_Z { get { return mUpperLeft_Z; } }
@@ -43,11 +49,13 @@ namespace DICOMViewer.Helper
             mXDocument = theXDocument;
             mFileName = theFileName;
 
-            mColumnCount = DICOMParserUtility.GetDICOMAttributeAsInt(theXDocument, "(0028,0011)");
-            mRowCount = DICOMParserUtility.GetDICOMAttributeAsInt(theXDocument, "(0028,0010)");
+            mColumnCount = DICOMParserUtility.GetDICOMAttributeAsInt(theXDocument, DICOMTAG.COLUMNS);
+            mRowCount = DICOMParserUtility.GetDICOMAttributeAsInt(theXDocument, DICOMTAG.ROWS);
+
+            mSliceLoc = DICOMParserUtility.GetDICOMAttributeAsInt(theXDocument, DICOMTAG.SLICE_LOCATION);
 
             // DICOM attribute 'Image Position Patient' (0020,0032)
-            string aImagePositionPatientString = DICOMParserUtility.GetDICOMAttributeAsString(theXDocument, "(0020,0032)");
+            string aImagePositionPatientString = DICOMParserUtility.GetDICOMAttributeAsString(theXDocument, DICOMTAG.IMAGE_POSITION_PATIENT);
             string[] aImagePositionPatientArray = aImagePositionPatientString.Split('\\');
             mUpperLeft_X = Convert.ToDouble(aImagePositionPatientArray[0], CultureInfo.InvariantCulture);
             mUpperLeft_Y = Convert.ToDouble(aImagePositionPatientArray[1], CultureInfo.InvariantCulture);
@@ -135,8 +143,8 @@ namespace DICOMViewer.Helper
         {
             if (mBitmap == null)
             {
-                int aWindowCenter = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, "(0028,1050)");
-                int aWindowWidth = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, "(0028,1051)");
+                int aWindowCenter = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, DICOMTAG.WINDOW_CENTER);
+                int aWindowWidth = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, DICOMTAG.WINDOW_WIDTH);
                 int aWindowLeftBorder = aWindowCenter - (aWindowWidth / 2);
 
                 byte[,] aNormalizedPixelBuffer = new byte[mRowCount, mColumnCount];
