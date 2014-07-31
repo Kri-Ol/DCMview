@@ -54,15 +54,13 @@ namespace DICOMViewer.Helper
 
             mSliceLoc = DICOMParserUtility.GetDICOMAttributeAsInt(theXDocument, DICOMTAG.SLICE_LOCATION);
 
-            // DICOM attribute 'Image Position Patient' (0020,0032)
             string aImagePositionPatientString = DICOMParserUtility.GetDICOMAttributeAsString(theXDocument, DICOMTAG.IMAGE_POSITION_PATIENT);
             string[] aImagePositionPatientArray = aImagePositionPatientString.Split('\\');
             mUpperLeft_X = Convert.ToDouble(aImagePositionPatientArray[0], CultureInfo.InvariantCulture);
             mUpperLeft_Y = Convert.ToDouble(aImagePositionPatientArray[1], CultureInfo.InvariantCulture);
             mUpperLeft_Z = Convert.ToDouble(aImagePositionPatientArray[2], CultureInfo.InvariantCulture);
 
-            // DICOM attribute 'Pixel Spacing' (0028,0030)
-            string aPixelSpacingString = DICOMParserUtility.GetDICOMAttributeAsString(theXDocument, "(0028,0030)");
+            string aPixelSpacingString = DICOMParserUtility.GetDICOMAttributeAsString(theXDocument, DICOMTAG.PIXEL_SPACING);
             string[] aPixelSpacingValueArray = aPixelSpacingString.Split('\\');
             mPixelSpacing_X = Convert.ToDouble(aPixelSpacingValueArray[0], CultureInfo.InvariantCulture);
             mPixelSpacing_Y = Convert.ToDouble(aPixelSpacingValueArray[1], CultureInfo.InvariantCulture);
@@ -78,61 +76,69 @@ namespace DICOMViewer.Helper
             mUpperLeft_Z -= theCenterPoint.Z;
         }
 
+        private int[,] BuildHounsfieldPixelBuffer()
+        {
+            int aRescaleIntercept = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, "(0028,1052)");
+            int aRescaleSlope = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, "(0028,1053)");
+
+            bool aPixelPaddingValueExist = DICOMParserUtility.DoesDICOMAttributeExist(mXDocument, "(0028,0120)");
+            int aPixelPaddingValue = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, "(0028,0120)");
+
+            // Allocate the Hounsfield Pixel Buffer
+            int[,] HounsfieldPixelBuffer = new int[mRowCount, mColumnCount];
+
+            // Find the pixel data DICOM attribute (7FE0,0010)
+            var aPixelDataQuery = from Element in mXDocument.Descendants("DataElement")
+                                  where Element.Attribute("Tag").Value.Equals("(7FE0,0010)")
+                                  select Element;
+
+            // Get the start position of the stream for the pixel data attribute 
+            long aStreamPosition = Convert.ToInt64(aPixelDataQuery.Last().Attribute("StreamPosition").Value);
+
+            // Open the binary reader
+            BinaryReader aBinaryReader = new BinaryReader(File.Open(mFileName, FileMode.Open, FileAccess.Read, FileShare.Read));
+
+            // Set the stream position of the binary reader to first pixel
+            aBinaryReader.BaseStream.Position = aStreamPosition;
+
+            // Loop over all pixel data values
+            for (int aRowIndex = 0; aRowIndex != mRowCount; ++aRowIndex)
+            {
+                for (int aColumnIndex = 0; aColumnIndex != mColumnCount; ++aColumnIndex)
+                {
+                    // For some images, the pixel buffer is smaller than '2Byte * RowCount * ColumnCount'
+                    // That's why we need the check...
+                    if(aBinaryReader.BaseStream.Position - 2 < aBinaryReader.BaseStream.Length) /// @#@ test is wrong?
+                    {
+                        byte aByte0 = aBinaryReader.ReadByte();
+                        byte aByte1 = aBinaryReader.ReadByte();
+
+                        int aPixelValue = Convert.ToInt32((aByte1 << 8) + aByte0);
+
+                        // Check for Pixel Padding Value  
+                        if (aPixelPaddingValueExist)
+                            if (aPixelValue == aPixelPaddingValue)
+                                aPixelValue = Int16.MinValue;
+
+                        // Rescale handling
+                        aPixelValue = aPixelValue* aRescaleSlope + aRescaleIntercept;
+
+                        // Value of the voxel is stored in Hounsfield Units
+                        HounsfieldPixelBuffer[aRowIndex, aColumnIndex] = aPixelValue;
+                    }
+                }
+            }
+            return HounsfieldPixelBuffer;
+        }
+
+
         // Helper method, which will return the Hounsfield value of a specified voxel (RowIndex/ColumnIndex).
         public int GetHounsfieldPixelValue(int theRowIndex, int theColumnIndex)
         {
             // Encoding of the pixel buffer is only done for the first call.
             if (mHounsfieldPixelBuffer == null)
             {
-                int aRescaleIntercept = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, "(0028,1052)");
-                int aRescaleSlope = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, "(0028,1053)");
-                bool aPixelPaddingValueExist = DICOMParserUtility.DoesDICOMAttributeExist(mXDocument, "(0028,0120)");
-                int aPixelPaddingValue = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, "(0028,0120)");
-
-                // Allocate the Hounsfield Pixel Buffer
-                mHounsfieldPixelBuffer = new int[mRowCount, mColumnCount];
-
-                // Find the pixel data DICOM attribute (7FE0,0010)
-                var aPixelDataQuery = from Element in mXDocument.Descendants("DataElement")
-                                      where Element.Attribute("Tag").Value.Equals("(7FE0,0010)")
-                                      select Element;
-
-                // Get the start position of the stream for the pixel data attribute 
-                long aStreamPosition = Convert.ToInt64(aPixelDataQuery.Last().Attribute("StreamPosition").Value);
-
-                // Open the binary reader
-                BinaryReader aBinaryReader = new BinaryReader(File.Open(mFileName, FileMode.Open, FileAccess.Read, FileShare.Read));
-                
-                // Set the stream position of the binary reader to first pixel
-                aBinaryReader.BaseStream.Position = aStreamPosition;
-
-                // Loop over all pixel data values
-                for (int aRowIndex = 0; aRowIndex < mRowCount; aRowIndex++)
-                {
-                    for (int aColumnIndex = 0; aColumnIndex < mColumnCount; aColumnIndex++)
-                    {
-                        // For some images, the pixel buffer is smaller than '2Byte * RowCount * ColumnCount'
-                        // That's why we need the check...
-                        if(aBinaryReader.BaseStream.Position - 2 < aBinaryReader.BaseStream.Length)
-                        {
-                            byte aByte0 = aBinaryReader.ReadByte();
-                            byte aByte1 = aBinaryReader.ReadByte();
-
-                            int aPixelValue = Convert.ToInt32((aByte1 << 8) + aByte0);
-
-                            // Check for Pixel Padding Value  
-                            if (aPixelPaddingValueExist)
-                                if (aPixelValue == aPixelPaddingValue)
-                                    aPixelValue = Int16.MinValue;
-
-                            // Rescale handling
-                            aPixelValue = aPixelValue * aRescaleSlope + aRescaleIntercept;
-
-                            // Value of the voxel is stored in Hounsfield Units
-                            mHounsfieldPixelBuffer[aRowIndex, aColumnIndex] = aPixelValue;
-                        }
-                    }
-                }
+                mHounsfieldPixelBuffer = BuildHounsfieldPixelBuffer();
             }
 
             return mHounsfieldPixelBuffer[theRowIndex, theColumnIndex];

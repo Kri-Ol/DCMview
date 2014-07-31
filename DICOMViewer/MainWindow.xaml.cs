@@ -21,9 +21,13 @@ namespace DICOMViewer
     /// </summary>
     public partial class MainWindow : Window
     {
+        private CTSliceInfoCollection _scol = null;
+
         public MainWindow()
         {
             InitializeComponent();
+
+            _scol = new CTSliceInfoCollection();
         }
 
         private void MenuItem_LoadClick(object sender, RoutedEventArgs e)
@@ -168,7 +172,12 @@ namespace DICOMViewer
             {
                 mGrid.RowDefinitions.First().Height = new GridLength(30);
                 mGrid.RowDefinitions.Last().Height = new GridLength(400);
-                CTSliceInfo aCTSliceInfo = new Helper.CTSliceInfo(anIOD.XDocument, anIOD.FileName);
+                CTSliceInfo aCTSliceInfo = _scol.Retrieve(anIOD.FileName);
+                if (aCTSliceInfo == null)
+                {
+                    aCTSliceInfo = new Helper.CTSliceInfo(anIOD.XDocument, anIOD.FileName);
+                    _scol.Add(aCTSliceInfo);
+                }
                 mImage.Source = aCTSliceInfo.GetPixelBufferAsBitmap();
             }
             else
@@ -223,6 +232,12 @@ namespace DICOMViewer
         {
             // Create Volume for Skin, IsoValue = -800 Hounsfield Units
             CreateVolumeView(-800);
+        }
+
+        private void ButtonRBF_Click(object sender, RoutedEventArgs e)
+        {
+            // Create Volume for Bone
+            CreateVolumeView(+600);
         }
 
         // Helper method to create and show the Volume View Dialog

@@ -36,7 +36,7 @@ namespace DICOMViewer.Parsing
             this.SOPClassUID = DICOMParserUtility.GetDICOMAttributeAsString(this.XDocument, "(0008,0016)");
             this.SOPClassName = SOPClassDictionary.GetSOPClassName(this.SOPClassUID);
 
-            this.PatientName = DICOMParserUtility.GetDICOMAttributeAsString(this.XDocument, "(0010,0010)");
+            this.PatientName = DICOMParserUtility.GetDICOMAttributeAsString(this.XDocument, DICOMTAG.PATIENT_NAME);
 
             this.TransferSyntaxUID = DICOMParserUtility.GetDICOMAttributeAsString(this.XDocument, "(0002,0010)");
 

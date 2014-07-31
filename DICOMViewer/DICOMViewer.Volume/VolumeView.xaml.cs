@@ -137,7 +137,9 @@ namespace DICOMViewer.Volume
 
         private void Grid_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.LeftButton != MouseButtonState.Pressed) return;
+            if (e.LeftButton != MouseButtonState.Pressed)
+                return;
+
             mDown = true;
             Point pos = Mouse.GetPosition(mViewPort);
             mLastPos = new Point(pos.X - mViewPort.ActualWidth / 2, mViewPort.ActualHeight / 2 - pos.Y);
@@ -159,11 +161,13 @@ namespace DICOMViewer.Volume
 
             if (dx != 0 && dy != 0)
             {
-                mouseAngle = Math.Asin(Math.Abs(dy) /
-                    Math.Sqrt(Math.Pow(dx, 2) + Math.Pow(dy, 2)));
-                if (dx < 0 && dy > 0) mouseAngle += Math.PI / 2;
-                else if (dx < 0 && dy < 0) mouseAngle += Math.PI;
-                else if (dx > 0 && dy < 0) mouseAngle += Math.PI * 1.5;
+                mouseAngle = Math.Asin(Math.Abs(dy) / Math.Sqrt(Math.Pow(dx, 2) + Math.Pow(dy, 2)));
+                if (dx < 0 && dy > 0)
+                    mouseAngle += Math.PI / 2;
+                else if (dx < 0 && dy < 0)
+                    mouseAngle += Math.PI;
+                else if (dx > 0 && dy < 0)
+                    mouseAngle += Math.PI * 1.5;
             }
             else if (dx == 0 && dy != 0)
             {
