@@ -30,7 +30,7 @@ namespace DICOMViewer.Helper
         private double mPixelSpacing_X = -1;
         private double mPixelSpacing_Y = -1;
         
-        private int[,] mHounsfieldPixelBuffer = null;
+        private short[,] mHounsfieldPixelBuffer = null;
         private WriteableBitmap mBitmap = null;
 
         // Public properties
@@ -43,6 +43,7 @@ namespace DICOMViewer.Helper
         public double UpperLeft_Z { get { return mUpperLeft_Z; } }
         public double PixelSpacing_X { get { return mPixelSpacing_X; } }
         public double PixelSpacing_Y { get { return mPixelSpacing_Y; } }
+        public short[,] HounsfieldPixelBuffer { get { return mHounsfieldPixelBuffer; } }
 
         public CTSliceInfo(XDocument theXDocument, string theFileName)
         {
@@ -76,7 +77,7 @@ namespace DICOMViewer.Helper
             mUpperLeft_Z -= theCenterPoint.Z;
         }
 
-        private int[,] BuildHounsfieldPixelBuffer()
+        private short[,] BuildHounsfieldPixelBuffer()
         {
             int aRescaleIntercept = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, "(0028,1052)");
             int aRescaleSlope = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, "(0028,1053)");
@@ -85,7 +86,7 @@ namespace DICOMViewer.Helper
             int aPixelPaddingValue = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, "(0028,0120)");
 
             // Allocate the Hounsfield Pixel Buffer
-            int[,] HounsfieldPixelBuffer = new int[mRowCount, mColumnCount];
+            short[,] HounsfieldPixelBuffer = new short[mRowCount, mColumnCount];
 
             // Find the pixel data DICOM attribute (7FE0,0010)
             var aPixelDataQuery = from Element in mXDocument.Descendants("DataElement")
@@ -113,7 +114,7 @@ namespace DICOMViewer.Helper
                         byte aByte0 = aBinaryReader.ReadByte();
                         byte aByte1 = aBinaryReader.ReadByte();
 
-                        int aPixelValue = Convert.ToInt32((aByte1 << 8) + aByte0);
+                        short aPixelValue = Convert.ToInt16((aByte1 << 8) + aByte0);
 
                         // Check for Pixel Padding Value  
                         if (aPixelPaddingValueExist)
@@ -121,7 +122,7 @@ namespace DICOMViewer.Helper
                                 aPixelValue = Int16.MinValue;
 
                         // Rescale handling
-                        aPixelValue = aPixelValue* aRescaleSlope + aRescaleIntercept;
+                        aPixelValue = (short)((int)aPixelValue* aRescaleSlope + aRescaleIntercept);
 
                         // Value of the voxel is stored in Hounsfield Units
                         HounsfieldPixelBuffer[aRowIndex, aColumnIndex] = aPixelValue;
@@ -131,9 +132,8 @@ namespace DICOMViewer.Helper
             return HounsfieldPixelBuffer;
         }
 
-
         // Helper method, which will return the Hounsfield value of a specified voxel (RowIndex/ColumnIndex).
-        public int GetHounsfieldPixelValue(int theRowIndex, int theColumnIndex)
+        public short GetHounsfieldPixelValue(int theRowIndex, int theColumnIndex)
         {
             // Encoding of the pixel buffer is only done for the first call.
             if (mHounsfieldPixelBuffer == null)
@@ -142,6 +142,121 @@ namespace DICOMViewer.Helper
             }
 
             return mHounsfieldPixelBuffer[theRowIndex, theColumnIndex];
+        }
+
+        private byte[,] BuildNormalizedPixelBuffer(int aWindowCenter, int aWindowWidth, int aWindowLeftBorder)
+        {
+            byte[,] aNormalizedPixelBuffer = new byte[mRowCount, mColumnCount];
+
+            // Normalize the Pixel value to [0,255]
+            for (int aRowIndex = 0; aRowIndex < mRowCount; aRowIndex++)
+            {
+                for (int aColumnIndex = 0; aColumnIndex < mColumnCount; aColumnIndex++)
+                {
+                    short aPixelValue = GetHounsfieldPixelValue(aRowIndex, aColumnIndex);
+                    int aPixelValueNormalized = (255 * (aPixelValue - aWindowLeftBorder)) / aWindowWidth;
+
+                    if (aPixelValueNormalized <= 0)
+                        aNormalizedPixelBuffer[aRowIndex, aColumnIndex] = 0;
+                    else
+                        if (aPixelValueNormalized >= 255)
+                        aNormalizedPixelBuffer[aRowIndex, aColumnIndex] = 255;
+                    else
+                        aNormalizedPixelBuffer[aRowIndex, aColumnIndex] = Convert.ToByte(aPixelValueNormalized);
+                }
+            }
+            return aNormalizedPixelBuffer;
+        }
+
+        private WriteableBitmap BuildColorBitmap(byte[,] aNormalizedPixelBuffer)
+        {
+            byte[] aImageDataArray = new byte[mRowCount * mColumnCount * 4];
+
+            int i = 0;
+            for (int aRowIndex = 0; aRowIndex < mRowCount; aRowIndex++)
+            {
+                for (int aColumnIndex = 0; aColumnIndex < mColumnCount; aColumnIndex++)
+                {
+                    byte aGrayValue = aNormalizedPixelBuffer[aRowIndex, aColumnIndex];
+
+                    // Black/White image: all RGB values are set to same value
+                    // Alpha value is set to 255
+                    aImageDataArray[i * 4] = aGrayValue;
+                    aImageDataArray[i * 4 + 1] = aGrayValue;
+                    aImageDataArray[i * 4 + 2] = aGrayValue;
+                    aImageDataArray[i * 4 + 3] = 255;
+
+                    i++;
+                }
+            }
+
+            // Allocate the Bitmap
+            WriteableBitmap aBitmap = new WriteableBitmap(mColumnCount, mRowCount, 96, 96, PixelFormats.Pbgra32, null);
+
+            // Write the Pixels
+            Int32Rect anImageRectangle = new Int32Rect(0, 0, mColumnCount, mRowCount);
+            int aImageStride = mColumnCount * aBitmap.Format.BitsPerPixel / 8;
+            aBitmap.WritePixels(anImageRectangle, aImageDataArray, aImageStride, 0);
+
+            return aBitmap;
+        }
+
+        private WriteableBitmap BuildGrey8Bitmap(byte[,] aNormalizedPixelBuffer)
+        {
+            byte[] aImageDataArray = new byte[mRowCount * mColumnCount * 1];
+
+            int i = 0;
+            for (int aRowIndex = 0; aRowIndex < mRowCount; aRowIndex++)
+            {
+                for (int aColumnIndex = 0; aColumnIndex < mColumnCount; aColumnIndex++)
+                {
+                    byte aGrayValue = aNormalizedPixelBuffer[aRowIndex, aColumnIndex];
+
+                    aImageDataArray[i] = aGrayValue;
+
+                    ++i;
+                }
+            }
+
+            // Allocate the Bitmap
+            WriteableBitmap aBitmap = new WriteableBitmap(mColumnCount, mRowCount, 96, 96, PixelFormats.Gray8, null);
+
+            // Write the Pixels
+            Int32Rect anImageRectangle = new Int32Rect(0, 0, mColumnCount, mRowCount);
+            int aImageStride = mColumnCount * aBitmap.Format.BitsPerPixel / 8;
+            aBitmap.WritePixels(anImageRectangle, aImageDataArray, aImageStride, 0);
+
+            return aBitmap;
+        }
+
+        // build bitmap directly from Hounsfield map, shifted by 1024
+        private WriteableBitmap BuildGrey16Bitmap(byte[,] aNormalizedPixelBuffer)
+        {
+            byte[] aImageDataArray = new byte[mRowCount * mColumnCount * 2];
+
+            int i = 0;
+            for (int aRowIndex = 0; aRowIndex != mRowCount; ++aRowIndex)
+            {
+                for (int aColumnIndex = 0; aColumnIndex != mColumnCount; ++aColumnIndex)
+                {
+                    ushort aGrayValue = (ushort)(mHounsfieldPixelBuffer[aRowIndex, aColumnIndex] + 1024);
+
+                    aImageDataArray[i * 2 + 0] = (byte)((aGrayValue >> 8) & 0x00FF); 
+                    aImageDataArray[i * 2 + 1] = (byte)(aGrayValue & 0x00FF);
+
+                    ++i;
+                }
+            }
+
+            // Allocate the Bitmap
+            WriteableBitmap aBitmap = new WriteableBitmap(mColumnCount, mRowCount, 96, 96, PixelFormats.Gray16, null);
+
+            // Write the Pixels
+            Int32Rect anImageRectangle = new Int32Rect(0, 0, mColumnCount, mRowCount);
+            int aImageStride = mColumnCount * aBitmap.Format.BitsPerPixel / 8;
+            aBitmap.WritePixels(anImageRectangle, aImageDataArray, aImageStride, 0);
+
+            return aBitmap;
         }
 
         // Helper method, which returns the pixel data of a CT slice as gray-scale bitmap.
@@ -153,54 +268,10 @@ namespace DICOMViewer.Helper
                 int aWindowWidth = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, DICOMTAG.WINDOW_WIDTH);
                 int aWindowLeftBorder = aWindowCenter - (aWindowWidth / 2);
 
-                byte[,] aNormalizedPixelBuffer = new byte[mRowCount, mColumnCount];
+                byte[,] aNormalizedPixelBuffer = BuildNormalizedPixelBuffer(aWindowCenter, aWindowWidth, aWindowLeftBorder);
 
-                // Normalize the Pixel value to [0,255]
-                for (int aRowIndex = 0; aRowIndex < mRowCount; aRowIndex++)
-                {
-                    for (int aColumnIndex = 0; aColumnIndex < mColumnCount; aColumnIndex++)
-                    {
-                        int aPixelValue = GetHounsfieldPixelValue(aRowIndex, aColumnIndex);
-                        int aPixelValueNormalized = (255 * (aPixelValue - aWindowLeftBorder)) / aWindowWidth;
-
-                        if (aPixelValueNormalized <= 0)
-                            aNormalizedPixelBuffer[aRowIndex, aColumnIndex] = 0;
-                        else
-                            if (aPixelValueNormalized >= 255)
-                                aNormalizedPixelBuffer[aRowIndex, aColumnIndex] = 255;
-                            else
-                                aNormalizedPixelBuffer[aRowIndex, aColumnIndex] = Convert.ToByte(aPixelValueNormalized);
-                    }
-                }
-
-                // Allocate the Pixel Array for the Bitmap (4 Byte: R, G, B, Alpha value)
-                byte[] aImageDataArray = new byte[mRowCount * mColumnCount * 4];
-
-                int i = 0;
-                for (int aRowIndex = 0; aRowIndex < mRowCount; aRowIndex++)
-                {
-                    for (int aColumnIndex = 0; aColumnIndex < mColumnCount; aColumnIndex++)
-                    {
-                        byte aGrayValue = aNormalizedPixelBuffer[aRowIndex, aColumnIndex];
-
-                        // Black/White image: all RGB values are set to same value
-                        // Alpha value is set to 255
-                        aImageDataArray[i * 4] = aGrayValue;
-                        aImageDataArray[i * 4 + 1] = aGrayValue;
-                        aImageDataArray[i * 4 + 2] = aGrayValue;
-                        aImageDataArray[i * 4 + 3] = 255;
-
-                        i++;
-                    }
-                }
-
-                // Allocate the Bitmap
-                mBitmap = new WriteableBitmap(mColumnCount, mRowCount, 96, 96, PixelFormats.Pbgra32, null);
-
-                // Write the Pixels
-                Int32Rect anImageRectangle = new Int32Rect(0, 0, mColumnCount, mRowCount);
-                int aImageStride = mColumnCount * mBitmap.Format.BitsPerPixel / 8;
-                mBitmap.WritePixels(anImageRectangle, aImageDataArray, aImageStride, 0);
+                // Build the Bitmap
+                mBitmap = BuildGrey16Bitmap(aNormalizedPixelBuffer);
             }
 
             return mBitmap;
