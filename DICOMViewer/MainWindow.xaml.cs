@@ -236,8 +236,30 @@ namespace DICOMViewer
 
         private void ButtonRBF_Click(object sender, RoutedEventArgs e)
         {
-            // Create Volume for Bone
-            CreateMaskedVolumeView(+600);
+            // Create Volume for Structure
+
+            byte[,,] mask = new byte[512, 512, 167];
+
+            for(int ix = 0; ix < 512; ++ix)
+            {
+                for(int iy = 0; iy < 512; ++iy)
+                {
+                    for (int iz = 0; iz < 167; ++iz)
+                    {
+                        mask[ix, iy, iz] = 0;
+
+                        if (iz > 113 && iz < 143)
+                        {
+                            if ((ix-256)* (ix - 256) + (iy - 256) * (iy - 256) < 12*12)
+                            {
+                                mask[ix, iy, iz] = 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            CreateMaskedVolumeView(+600, mask);
         }
 
         // Helper method to create and show the Volume View Dialog
@@ -281,7 +303,7 @@ namespace DICOMViewer
                 System.Windows.MessageBox.Show("The series does not have suffcient CT Slices in order to generate a Volume View!");
         }
 
-        private void CreateMaskedVolumeView(int theIsoValueInHounsfield)
+        private void CreateMaskedVolumeView(int theIsoValueInHounsfield, byte[,,] mask)
         {
             TreeViewItem SelectedNode = this.mIODTree.SelectedItem as TreeViewItem;
             if (SelectedNode == null)

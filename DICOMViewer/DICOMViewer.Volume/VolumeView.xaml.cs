@@ -14,8 +14,8 @@ namespace DICOMViewer.Volume
     public partial class VolumeView : Window
     {
         private GeometryModel3D mGeometryModel;
-        private bool mDown;
-        private Point mLastPos; 
+        private bool            mDown;
+        private Point           mLastPos; 
 
         public VolumeView()
         {
