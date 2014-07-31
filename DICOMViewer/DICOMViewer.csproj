@@ -120,6 +120,8 @@
     <Compile Include="DICOMViewer.Parsing\PublicDICOMDictionary.cs" />
     <Compile Include="DICOMViewer.Parsing\SOPClassDictionary.cs" />
     <Compile Include="DICOMViewer.Parsing\TransferSyntaxDictionary.cs" />
+    <Compile Include="DICOMViewer.ROIVOI\Contour.cs" />
+    <Compile Include="DICOMViewer.ROIVOI\Directions.cs" />
     <Compile Include="DICOMViewer.Volume\EdgeTable.cs" />
     <Compile Include="DICOMViewer.Volume\MarchingCubes.cs" />
     <Compile Include="DICOMViewer.Volume\TriTable.cs" />

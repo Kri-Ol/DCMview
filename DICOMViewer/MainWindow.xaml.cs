@@ -237,7 +237,7 @@ namespace DICOMViewer
         private void ButtonRBF_Click(object sender, RoutedEventArgs e)
         {
             // Create Volume for Bone
-            CreateVolumeView(+600);
+            CreateMaskedVolumeView(+600);
         }
 
         // Helper method to create and show the Volume View Dialog
@@ -275,6 +275,46 @@ namespace DICOMViewer
                 
                 Mouse.OverrideCursor = null;
                 
+                aVolumeViewWindow.ShowDialog();
+            }
+            else
+                System.Windows.MessageBox.Show("The series does not have suffcient CT Slices in order to generate a Volume View!");
+        }
+
+        private void CreateMaskedVolumeView(int theIsoValueInHounsfield)
+        {
+            TreeViewItem SelectedNode = this.mIODTree.SelectedItem as TreeViewItem;
+            if (SelectedNode == null)
+                return;
+
+            TreeViewItem ParentNode = SelectedNode.Parent as TreeViewItem;
+
+            VolumeView aVolumeViewWindow = new VolumeView();
+
+            List<IOD> aIODList = new List<IOD>();
+
+            // Add each CT Slice of the series to the IOD List.
+            // Remember: the CT Slices have already been added to the IOD Tree in sorted order (Z-Value ascending).
+            foreach (TreeViewItem ChildNode in ParentNode.Items)
+            {
+                IOD anIOD = ChildNode.Tag as IOD;
+                if (anIOD == null)
+                    break;
+
+                if (anIOD.IsPixelDataProcessable())
+                    aIODList.Add(anIOD);
+            }
+
+            if (aIODList.Count > 2)
+            {
+                Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+
+                // Create the Volume for the specified IOD list / IsoValue.
+                aVolumeViewWindow.CreateVolume(aIODList, theIsoValueInHounsfield);
+                aVolumeViewWindow.Title = string.Format("DICOM Viewer - Volume View (IsoValue = {0} in Hounsfield Units)", theIsoValueInHounsfield.ToString());
+
+                Mouse.OverrideCursor = null;
+
                 aVolumeViewWindow.ShowDialog();
             }
             else
