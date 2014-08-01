@@ -21,13 +21,36 @@ namespace DICOMViewer
     /// </summary>
     public partial class MainWindow : Window
     {
-        private CTSliceInfoCollection _scol = null;
+        private IODRepository         _IODRepo = null;
+        private CTSliceInfoCollection _scol    = null;
 
         public MainWindow()
         {
             InitializeComponent();
 
             _scol = new CTSliceInfoCollection();
+        }
+
+        // build slice list for a given patient
+        private void ProcessAllCTs(string aPatientName, IODRepository mIODRepository)
+        {
+            foreach (string aSOPClass in mIODRepository.GetSOPClassNames(aPatientName))
+            {
+                foreach (string aStudy in mIODRepository.GetStudies(aPatientName, aSOPClass))
+                {
+                    foreach (string aSeries in mIODRepository.GetSeries(aPatientName, aSOPClass, aStudy))
+                    {
+                        foreach (IOD aIOD in mIODRepository.GetIODs(aPatientName, aSOPClass, aStudy, aSeries))
+                        {
+                            if (aIOD.IsPixelDataProcessable())
+                            {
+                                CTSliceInfo aCTSliceInfo = new Helper.CTSliceInfo(aIOD.XDocument, aIOD.FileName);
+                                _scol.Add(aCTSliceInfo);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         private void MenuItem_LoadClick(object sender, RoutedEventArgs e)
@@ -84,7 +107,19 @@ namespace DICOMViewer
                     }
                 }
 
+                _IODRepo = mIODRepository;
+
                 Mouse.OverrideCursor = null;
+
+                List<string> patients = mIODRepository.GetPatients();
+
+                Mouse.OverrideCursor = System.Windows.Input.Cursors.Hand;
+
+                ProcessAllCTs(patients.ElementAt(0), _IODRepo);
+
+                Mouse.OverrideCursor = null;
+
+                _scol.GenerateAllHounsfields();
             }
         }
 

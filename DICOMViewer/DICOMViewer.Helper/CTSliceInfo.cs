@@ -16,6 +16,8 @@ namespace DICOMViewer.Helper
 
     public class CTSliceInfo
     {
+        private const string HOUNSFIELD_EXT = ".hsu";
+
         private XDocument mXDocument = null;
         private string    mFileName  = null;
 
@@ -79,14 +81,30 @@ namespace DICOMViewer.Helper
 
         private short[,] BuildHounsfieldPixelBuffer()
         {
-            int aRescaleIntercept = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, "(0028,1052)");
-            int aRescaleSlope = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, "(0028,1053)");
+            // Allocate the Hounsfield Pixel Buffer
+            short[,] HounsfieldPixelBuffer = new short[mRowCount, mColumnCount];
+
+            if (File.Exists(mFileName + HOUNSFIELD_EXT))
+            {
+                BinaryReader br = new BinaryReader(File.Open(mFileName + HOUNSFIELD_EXT, FileMode.Open, FileAccess.Read, FileShare.Read));
+
+                for (int aRowIndex = 0; aRowIndex != mRowCount; ++aRowIndex)
+                {
+                    for (int aColumnIndex = 0; aColumnIndex != mColumnCount; ++aColumnIndex)
+                    {
+                        HounsfieldPixelBuffer[aRowIndex, aColumnIndex] = br.ReadInt16();
+                    }
+                }
+                br.Dispose();
+
+                return HounsfieldPixelBuffer;
+            }
+
+            int aRescaleIntercept = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, DICOMTAG.RESCALE_INTERCEPT);
+            int aRescaleSlope = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, DICOMTAG.RESCALE_SLOPE);
 
             bool aPixelPaddingValueExist = DICOMParserUtility.DoesDICOMAttributeExist(mXDocument, "(0028,0120)");
             int aPixelPaddingValue = DICOMParserUtility.GetDICOMAttributeAsInt(mXDocument, "(0028,0120)");
-
-            // Allocate the Hounsfield Pixel Buffer
-            short[,] HounsfieldPixelBuffer = new short[mRowCount, mColumnCount];
 
             // Find the pixel data DICOM attribute (7FE0,0010)
             var aPixelDataQuery = from Element in mXDocument.Descendants("DataElement")
@@ -129,6 +147,27 @@ namespace DICOMViewer.Helper
                     }
                 }
             }
+
+            // cache HounsfieldPixelBuffer
+            {
+                if (File.Exists(mFileName + HOUNSFIELD_EXT))
+                    File.Delete(mFileName + HOUNSFIELD_EXT);
+
+                FileStream f = File.Open(mFileName + HOUNSFIELD_EXT, FileMode.OpenOrCreate, FileAccess.Write);
+                BinaryWriter bw = new BinaryWriter(f);
+
+                for (int aRowIndex = 0; aRowIndex != mRowCount; ++aRowIndex)
+                {
+                    for (int aColumnIndex = 0; aColumnIndex != mColumnCount; ++aColumnIndex)
+                    {
+                        bw.Write(HounsfieldPixelBuffer[aRowIndex, aColumnIndex]);
+                    }
+                }
+                bw.Flush();
+
+                f.Close();
+            }
+
             return HounsfieldPixelBuffer;
         }
 

@@ -137,9 +137,6 @@ namespace DICOMViewer.Volume
 
         public static Point3D VertexInterp(double isolevel, Point3D p1, Point3D p2, double valp1, double valp2)
         {
-            double mu;
-            Point3D p = new Point3D();
-
             if (Math.Abs(isolevel-valp1) < 0.00001)
                 return(p1);
    
@@ -148,14 +145,16 @@ namespace DICOMViewer.Volume
    
             if (Math.Abs(valp1-valp2) < 0.00001)
                 return(p1);
-   
-            mu = (isolevel - valp1) / (valp2 - valp1);
+
+            Point3D p = new Point3D();
+
+            double mu = (isolevel - valp1) / (valp2 - valp1);
             
             p.X = p1.X + mu * (p2.X - p1.X);
             p.Y = p1.Y + mu * (p2.Y - p1.Y);
             p.Z = p1.Z + mu * (p2.Z - p1.Z);
 
-            return(p);
+            return p;
         }
     }
 }

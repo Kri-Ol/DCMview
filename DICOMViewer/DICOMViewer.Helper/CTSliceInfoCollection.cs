@@ -14,6 +14,8 @@ namespace DICOMViewer.Helper
         private short[][,]    _volume = null; // whole volume in Hounsfield units, as jagged array
 #endregion
 
+        public short[][,] Volume { get { return _volume;  } }
+
         public CTSliceInfoCollection()
         {
             _slices_by_name = new Dictionary<string, CTSliceInfo>();
@@ -48,6 +50,16 @@ namespace DICOMViewer.Helper
                 return _slices_by_locn[key];
 
             return null;
+        }
+
+        public void GenerateAllHounsfields()
+        {
+            var count = _slices_by_locn.Count;
+            for (int k = 0; k != count; ++k)
+            {
+                var item = _slices_by_locn.ElementAt(k);
+                item.Value.GetHounsfieldPixelValue(0, 0);
+            }
         }
 
         // returns true if final array is whole, without a skip of a slice

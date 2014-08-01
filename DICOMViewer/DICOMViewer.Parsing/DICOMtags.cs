@@ -20,5 +20,8 @@ namespace DICOMViewer.Parsing
 
         public const string IMAGE_POSITION_PATIENT = "(0020,0032)";
         public const string SLICE_LOCATION         = "(0020,1041)";
+
+        public const string RESCALE_INTERCEPT = "(0028,1052)";
+        public const string RESCALE_SLOPE     = "(0028,1053)";
     }
 }
