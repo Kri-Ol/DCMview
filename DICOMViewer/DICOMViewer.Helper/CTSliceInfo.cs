@@ -176,10 +176,13 @@ namespace DICOMViewer.Helper
         {
             // Encoding of the pixel buffer is only done for the first call.
             if (mHounsfieldPixelBuffer == null)
-            {
                 mHounsfieldPixelBuffer = BuildHounsfieldPixelBuffer();
-            }
 
+            return mHounsfieldPixelBuffer[theRowIndex, theColumnIndex];
+        }
+
+        public short GetHounsfieldPixelValue_Fast(int theRowIndex, int theColumnIndex)
+        {
             return mHounsfieldPixelBuffer[theRowIndex, theColumnIndex];
         }
 

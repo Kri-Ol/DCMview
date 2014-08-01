@@ -14,6 +14,7 @@ namespace DICOMViewer.Helper
         private short[][,]    _volume = null; // whole volume in Hounsfield units, as jagged array
 #endregion
 
+        public CTSliceInfo[] Slices { get { return _slices; } }
         public short[][,] Volume { get { return _volume;  } }
 
         public CTSliceInfoCollection()
@@ -63,7 +64,7 @@ namespace DICOMViewer.Helper
         }
 
         // returns true if final array is whole, without a skip of a slice
-        private bool BuildSortedSlicesArray()
+        public bool BuildSortedSlicesArray()
         {
             var count = _slices_by_locn.Count;
             _slices = new CTSliceInfo[count];

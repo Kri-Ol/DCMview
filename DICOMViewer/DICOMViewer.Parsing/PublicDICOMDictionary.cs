@@ -567,7 +567,7 @@ namespace DICOMViewer.Parsing
             { "(0028,0301)", new DICOMTagInfo("(0028,0301)", "Burned In Annotation", "CS") },
             { "(0028,1040)", new DICOMTagInfo("(0028,1040)", "Pixel Intensity Relationship", "CS") },
             { "(0028,1041)", new DICOMTagInfo("(0028,1041)", "Pixel Intensity Relationship Sign", "SS") },
-            { "(0028,1050)", new DICOMTagInfo("(0028,1050)", "Window Center", "DS") },
+            { DICOMTAG.WINDOW_CENTER, new DICOMTagInfo(DICOMTAG.WINDOW_CENTER, "Window Center", "DS") },
             { DICOMTAG.WINDOW_WIDTH,      new DICOMTagInfo(DICOMTAG.WINDOW_WIDTH, "Window Width", "DS") },
             { DICOMTAG.RESCALE_INTERCEPT, new DICOMTagInfo(DICOMTAG.RESCALE_INTERCEPT, "Rescale Intercept", "DS") },
             { DICOMTAG.RESCALE_SLOPE,     new DICOMTagInfo(DICOMTAG.RESCALE_SLOPE, "Rescale Slope", "DS") },

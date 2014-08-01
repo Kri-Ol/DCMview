@@ -300,34 +300,23 @@ namespace DICOMViewer
         // Helper method to create and show the Volume View Dialog
         private void CreateVolumeView(int theIsoValueInHounsfield)
         {
-            TreeViewItem SelectedNode = this.mIODTree.SelectedItem as TreeViewItem;
-            if (SelectedNode == null)
-                return;
-
-            TreeViewItem ParentNode = SelectedNode.Parent as TreeViewItem;
-
-            VolumeView aVolumeViewWindow = new VolumeView();
-
-            List<IOD> aIODList = new List<IOD>();
-
-            // Add each CT Slice of the series to the IOD List.
-            // Remember: the CT Slices have already been added to the IOD Tree in sorted order (Z-Value ascending).
-            foreach (TreeViewItem ChildNode in ParentNode.Items)
+            bool rc = _scol.BuildSortedSlicesArray();
+            if (!rc)
             {
-                IOD anIOD = ChildNode.Tag as IOD;
-                if (anIOD == null)
-                    break;
-
-                if(anIOD.IsPixelDataProcessable())
-                    aIODList.Add(anIOD);
+                System.Windows.MessageBox.Show("There are skips in CTs!");
+                return;
             }
 
-            if (aIODList.Count > 2)
+            CTSliceInfo[] slices = _scol.Slices;
+
+            if (slices.Length > 2)
             {
+                VolumeView aVolumeViewWindow = new VolumeView();
+
                 Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
 
                 // Create the Volume for the specified IOD list / IsoValue.
-                aVolumeViewWindow.CreateVolume(aIODList, theIsoValueInHounsfield);
+                aVolumeViewWindow.CreateVolume(slices, theIsoValueInHounsfield);
                 aVolumeViewWindow.Title = string.Format("DICOM Viewer - Volume View (IsoValue = {0} in Hounsfield Units)", theIsoValueInHounsfield.ToString());
                 
                 Mouse.OverrideCursor = null;
@@ -340,34 +329,24 @@ namespace DICOMViewer
 
         private void CreateMaskedVolumeView(int theIsoValueInHounsfield, byte[,,] mask)
         {
-            TreeViewItem SelectedNode = this.mIODTree.SelectedItem as TreeViewItem;
-            if (SelectedNode == null)
-                return;
-
-            TreeViewItem ParentNode = SelectedNode.Parent as TreeViewItem;
-
-            VolumeView aVolumeViewWindow = new VolumeView();
-
-            List<IOD> aIODList = new List<IOD>();
-
-            // Add each CT Slice of the series to the IOD List.
-            // Remember: the CT Slices have already been added to the IOD Tree in sorted order (Z-Value ascending).
-            foreach (TreeViewItem ChildNode in ParentNode.Items)
+            bool rc = _scol.BuildSortedSlicesArray();
+            if (!rc)
             {
-                IOD anIOD = ChildNode.Tag as IOD;
-                if (anIOD == null)
-                    break;
-
-                if (anIOD.IsPixelDataProcessable())
-                    aIODList.Add(anIOD);
+                System.Windows.MessageBox.Show("There are skips in CTs!");
+                return;
             }
 
-            if (aIODList.Count > 2)
+            CTSliceInfo[] slices = _scol.Slices;
+
+            int l = slices.Length;
+            if (l > 2)
             {
+                VolumeView aVolumeViewWindow = new VolumeView();
+
                 Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
 
                 // Create the Volume for the specified IOD list / IsoValue.
-                aVolumeViewWindow.CreateVolume(aIODList, theIsoValueInHounsfield);
+                aVolumeViewWindow.CreateVolume(slices, theIsoValueInHounsfield);
                 aVolumeViewWindow.Title = string.Format("DICOM Viewer - Volume View (IsoValue = {0} in Hounsfield Units)", theIsoValueInHounsfield.ToString());
 
                 Mouse.OverrideCursor = null;

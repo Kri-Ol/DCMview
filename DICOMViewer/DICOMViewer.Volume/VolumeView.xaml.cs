@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 
 using DICOMViewer.Helper;
-using DICOMViewer.Parsing;
 
 namespace DICOMViewer.Volume
 {
@@ -23,7 +21,7 @@ namespace DICOMViewer.Volume
         }
 
         // Creates the Volume View out of a given list of CT Slices for the specified Iso Value. 
-        public void CreateVolume(List<IOD> theImageIODList, int theIsoValue)
+        public void CreateVolume(CTSliceInfo[] slices, int theIsoValue)
         {
             // 1. Calculate the Center Point
             // =============================
@@ -31,9 +29,9 @@ namespace DICOMViewer.Volume
             // See also: 'http://www.codeproject.com/Articles/23332/WPF-3D-Primer#'
             // However, this implementation needs the 3D model to be centered in the origin of the coordinate system.
             // As a consequence, all CT Slices have to be shifted by the Center Point (method 'AdjustPatientPositionToCenterPoint()')
-            CTSliceInfo aCTSliceFirst = new CTSliceInfo(theImageIODList[0].XDocument, theImageIODList[0].FileName);
-            CTSliceInfo aCTSliceLast = new CTSliceInfo(theImageIODList[theImageIODList.Count - 1].XDocument, theImageIODList[theImageIODList.Count - 1].FileName);
-            
+            CTSliceInfo aCTSliceFirst = slices[0];
+            CTSliceInfo aCTSliceLast  = slices[slices.Length - 1];
+
             double Center_X = aCTSliceFirst.UpperLeft_X + (aCTSliceFirst.PixelSpacing_X * aCTSliceFirst.ColumnCount / 2);
             double Center_Y = aCTSliceFirst.UpperLeft_Y + (aCTSliceFirst.PixelSpacing_Y * aCTSliceFirst.RowCount / 2);
 
@@ -52,13 +50,13 @@ namespace DICOMViewer.Volume
             List<Triangle> aTriangleList = new List<Triangle>();
 
             CTSliceInfo aCTSlice1 = null;
-            CTSliceInfo aCTSlice2 = new CTSliceInfo(theImageIODList[0].XDocument, theImageIODList[0].FileName);
+            CTSliceInfo aCTSlice2 = slices[0];
             aCTSlice2.AdjustPatientPositionToCenterPoint(aCenterPoint);
 
-            for (int aSliceIndex = 1; aSliceIndex < theImageIODList.Count; aSliceIndex++)
+            for (int aSliceIndex = 1; aSliceIndex < slices.Length; aSliceIndex++)
             {
                 aCTSlice1 = aCTSlice2;
-                aCTSlice2 = new CTSliceInfo(theImageIODList[aSliceIndex].XDocument, theImageIODList[aSliceIndex].FileName);
+                aCTSlice2 = slices[aSliceIndex];
                 aCTSlice2.AdjustPatientPositionToCenterPoint(aCenterPoint);
 
                 for (int aRowIndex = 0; aRowIndex < aCTSlice1.RowCount - 1; aRowIndex++)
@@ -96,7 +94,7 @@ namespace DICOMViewer.Volume
 
             // Dump some useful size information.
             mInfoLabel.Text =  string.Format("CT Pixel Data\n");
-            mInfoLabel.Text += string.Format("{0} x {1} x {2} = {3:### ### ### ###}\n\n", aCTSlice1.RowCount, aCTSlice1.ColumnCount, theImageIODList.Count, aCTSlice1.RowCount * aCTSlice1.ColumnCount * theImageIODList.Count);
+            mInfoLabel.Text += string.Format("{0} x {1} x {2} = {3:### ### ### ###}\n\n", aCTSlice1.RowCount, aCTSlice1.ColumnCount, slices.Length, aCTSlice1.RowCount * aCTSlice1.ColumnCount * slices.Length);
             mInfoLabel.Text += string.Format("Marching Cubes\n");
             mInfoLabel.Text += string.Format("IsoValue: {0}, Triangle Count: {1:### ### ### ###}\n\n", theIsoValue, aTriangleList.Count);
             mInfoLabel.Text += string.Format("Mesh Size\n");
@@ -161,7 +159,7 @@ namespace DICOMViewer.Volume
 
             if (dx != 0 && dy != 0)
             {
-                mouseAngle = Math.Asin(Math.Abs(dy) / Math.Sqrt(Math.Pow(dx, 2) + Math.Pow(dy, 2)));
+                mouseAngle = Math.Asin(Math.Abs(dy) / Math.Sqrt(dx*dx + dy*dy));
                 if (dx < 0 && dy > 0)
                     mouseAngle += Math.PI / 2;
                 else if (dx < 0 && dy < 0)
@@ -173,19 +171,19 @@ namespace DICOMViewer.Volume
             {
                 mouseAngle = Math.Sign(dy) > 0 ? Math.PI / 2 : Math.PI * 1.5;
             }
-            else if (dx != 0 && dy == 0)
+            else if (dx != 0.0 && dy == 0.0)
             {
-                mouseAngle = Math.Sign(dx) > 0 ? 0 : Math.PI;
+                mouseAngle = Math.Sign(dx) > 0 ? 0.0 : Math.PI;
             }
 
             double axisAngle = mouseAngle + Math.PI / 2;
 
-            Vector3D axis = new Vector3D( Math.Cos(axisAngle) * 4, Math.Sin(axisAngle) * 4, 0);
+            Vector3D axis = new Vector3D( Math.Cos(axisAngle) * 4.0, Math.Sin(axisAngle) * 4.0, 0.0);
 
-            double rotation = 0.02 * Math.Sqrt(Math.Pow(dx, 2) + Math.Pow(dy, 2));
+            double rotation = 0.02 * Math.Sqrt(dx*dx + dy*dy);
 
             Transform3DGroup group = mGeometryModel.Transform as Transform3DGroup;
-            QuaternionRotation3D r = new QuaternionRotation3D(new Quaternion(axis, rotation * 180 / Math.PI));
+            QuaternionRotation3D r = new QuaternionRotation3D(new Quaternion(axis, rotation * 180.0 / Math.PI));
             group.Children.Add(new RotateTransform3D(r));
 
             mLastPos = actualPos;
