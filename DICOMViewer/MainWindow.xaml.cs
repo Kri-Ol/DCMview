@@ -273,32 +273,37 @@ namespace DICOMViewer
         {
             // Create Volume for Structure
 
-            byte[,,] mask = new byte[512, 512, 167];
+            byte[][,] mask = new byte[180][,];
 
-            for(int ix = 0; ix < 512; ++ix)
+            for (int iz = 0; iz != 180; ++iz)
             {
-                for(int iy = 0; iy < 512; ++iy)
+                mask[iz] = new byte[512, 512];
+                for (int ix = 0; ix < 512; ++ix)
                 {
-                    for (int iz = 0; iz < 167; ++iz)
+                    for(int iy = 0; iy < 512; ++iy)
                     {
-                        mask[ix, iy, iz] = 0;
+                        mask[iz][ix, iy] = 0;
 
                         if (iz > 113 && iz < 143)
                         {
-                            if ((ix-256)* (ix - 256) + (iy - 256) * (iy - 256) < 12*12)
+                            float q = (float)iz / 130.0f;
+                            q = Math.Min(q, 2.0f - q);
+
+                            float rad2 = 12.0f * 12.0f * (float)Math.Sqrt(q);
+                            if ((float)((ix-156)* (ix - 156) + (iy - 206) * (iy - 206)) <= rad2)
                             {
-                                mask[ix, iy, iz] = 1;
+                                mask[iz][ix, iy] = 1;
                             }
                         }
                     }
                 }
             }
 
-            CreateMaskedVolumeView(+600, mask);
+            CreateMaskedVolumeView(+500, mask);
         }
 
         // Helper method to create and show the Volume View Dialog
-        private void CreateVolumeView(int theIsoValueInHounsfield)
+        private void CreateVolumeView(short theIsoValueInHounsfield)
         {
             bool rc = _scol.BuildSortedSlicesArray();
             if (!rc)
@@ -327,7 +332,7 @@ namespace DICOMViewer
                 System.Windows.MessageBox.Show("The series does not have suffcient CT Slices in order to generate a Volume View!");
         }
 
-        private void CreateMaskedVolumeView(int theIsoValueInHounsfield, byte[,,] mask)
+        private void CreateMaskedVolumeView(short theIsoValueInHounsfield, byte[][,] mask)
         {
             bool rc = _scol.BuildSortedSlicesArray();
             if (!rc)
@@ -338,8 +343,22 @@ namespace DICOMViewer
 
             CTSliceInfo[] slices = _scol.Slices;
 
-            int l = slices.Length;
-            if (l > 2)
+            for (int k = 0; k != slices.Length; ++k)
+            {
+                short[,] buffer = slices[k].HounsfieldPixelBuffer;
+                byte[,] maska   = mask[k];
+
+                for (int r = 0; r != 512; ++r)
+                {
+                    for (int c = 0; c != 512; ++c)
+                    {
+                        if (maska[r, c] > 0)
+                            buffer[r, c] = theIsoValueInHounsfield;
+                    }
+                }
+            }
+
+            if (slices.Length > 2)
             {
                 VolumeView aVolumeViewWindow = new VolumeView();
 

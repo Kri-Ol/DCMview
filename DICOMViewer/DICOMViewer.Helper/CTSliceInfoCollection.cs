@@ -63,9 +63,26 @@ namespace DICOMViewer.Helper
             }
         }
 
+        private bool CheckForContinuity()
+        {
+            var count = _slices.Length;
+            for (int k = 1; k != count; ++k)
+            {
+                if (_slices[k - 1].SliceLoc != _slices[k].SliceLoc - 1)
+                    return false;
+            }
+            return true;
+        }
+
         // returns true if final array is whole, without a skip of a slice
         public bool BuildSortedSlicesArray()
         {
+            if (_slices != null)
+            {
+                bool cc = CheckForContinuity();
+                return cc;
+            }
+
             var count = _slices_by_locn.Count;
             _slices = new CTSliceInfo[count];
 
@@ -80,12 +97,8 @@ namespace DICOMViewer.Helper
                                 { return ctA.SliceLoc.CompareTo(ctB.SliceLoc); }
                       );
 
-            for (int k = 1; k != count; ++k)
-            {
-                if (_slices[k - 1].SliceLoc != _slices[k].SliceLoc - 1)
-                    return false;
-            }
-            return true;
+            bool rc = CheckForContinuity();
+            return rc;
         }
 
         public void BuildVolume()

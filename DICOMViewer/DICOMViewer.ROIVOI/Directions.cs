@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace DICOMViewer.ROIVOI
+﻿namespace DICOMViewer.ROIVOI
 {
     public enum Direction
     {
-        AXIAL,
+        CORONAL,
         SAGITTAL,
-        CORONAL
+        AXIAL
     }
 }

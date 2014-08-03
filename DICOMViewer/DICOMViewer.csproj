@@ -110,6 +110,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DICOMViewer.ROIVOI\BoundingBox.cs" />
+    <Compile Include="DICOMViewer.ROIVOI\ContourCollection.cs" />
     <Compile Include="DICOMViewer.Helper\CTSliceInfoCollection.cs" />
     <Compile Include="DICOMViewer.Parsing\DICOMtags.cs" />
     <Compile Include="DICOMViewer.Helper\CTSliceInfo.cs" />
@@ -122,12 +124,16 @@
     <Compile Include="DICOMViewer.Parsing\TransferSyntaxDictionary.cs" />
     <Compile Include="DICOMViewer.ROIVOI\Contour.cs" />
     <Compile Include="DICOMViewer.ROIVOI\Directions.cs" />
+    <Compile Include="DICOMViewer.ROIVOI\Point3f.cs" />
+    <Compile Include="DICOMViewer.ROIVOI\Utils.cs" />
     <Compile Include="DICOMViewer.Volume\EdgeTable.cs" />
     <Compile Include="DICOMViewer.Volume\MarchingCubes.cs" />
     <Compile Include="DICOMViewer.Volume\TriTable.cs" />
     <Compile Include="DICOMViewer.Volume\VolumeView.xaml.cs">
       <DependentUpon>VolumeView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DICOMViewer.ROIVOI\Evaluator.cs" />
+    <Compile Include="DICOMViewer.ROIVOI\EvaluatorRBF.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
