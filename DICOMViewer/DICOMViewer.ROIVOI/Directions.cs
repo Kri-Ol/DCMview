@@ -2,8 +2,8 @@
 {
     public enum Direction
     {
-        CORONAL,
-        SAGITTAL,
-        AXIAL
+        SAGITTAL = 0,
+        CORONAL  = 1,
+        AXIAL    = 2
     }
 }

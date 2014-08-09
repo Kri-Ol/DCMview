@@ -18,6 +18,8 @@
             <MenuItem Header="_File">
                 <MenuItem Header="_Load..." Click="MenuItem_LoadClick" />
                 <Separator />
+                <MenuItem Header="_LoadCtr..." Click="MenuItem_LoadContoursClick" />
+                <Separator />
                 <MenuItem Header="_Exit" Click="MenuItem_ExitClick" />
             </MenuItem>
             <MenuItem Header="_About" Click="MenuItem_AboutClick" />

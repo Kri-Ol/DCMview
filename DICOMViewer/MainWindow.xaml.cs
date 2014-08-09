@@ -8,11 +8,16 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Xml.Linq;
+using System.Windows.Media.Media3D;
 
 using DICOMViewer.Helper;
 using DICOMViewer.ImageFlow;
 using DICOMViewer.Parsing;
 using DICOMViewer.Volume;
+using DICOMViewer.ROIVOI;
+
+using Ceres.RBF;
+using Ceres.Utilities;
 
 namespace DICOMViewer
 {
@@ -21,8 +26,11 @@ namespace DICOMViewer
     /// </summary>
     public partial class MainWindow : Window
     {
+#region Data
         private IODRepository         _IODRepo = null;
         private CTSliceInfoCollection _scol    = null;
+        private ContourCollection     _ccol = null;
+#endregion
 
         public MainWindow()
         {
@@ -123,6 +131,18 @@ namespace DICOMViewer
             }
         }
 
+        private void MenuItem_LoadContoursClick(object sender, RoutedEventArgs e)
+        {
+            var dialog = new System.Windows.Forms.OpenFileDialog();
+
+            System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+            if (result == System.Windows.Forms.DialogResult.OK)
+            {
+                _ccol = new ContourCollection();
+                _ccol.Fill(dialog.FileName);
+            }
+        }
+
         private void MenuItem_ExitClick(object sender, RoutedEventArgs e)
         {
             Application.Current.Shutdown();
@@ -130,7 +150,7 @@ namespace DICOMViewer
 
         private void MenuItem_AboutClick(object sender, RoutedEventArgs e)
         {
-            System.Windows.MessageBox.Show("DICOM Viewer\nVisualization of DICOM CT Images using WPF\n\n\u00a9 2012, bernhard.kuegle@web.de");
+            System.Windows.MessageBox.Show("DICOM WorkBench\n\nhttp://www.codeproject.com/Articles/466955/Medical-image-visualization-using-WPF\nhttp://www.codeproject.com/Articles/36014/DICOM-Image-Viewer\n...@xcision.com");
         }
 
         // Helper method to add one DICOM attribute to the DICOM Tag Tree.
@@ -269,32 +289,56 @@ namespace DICOMViewer
             CreateVolumeView(-800);
         }
 
+        private static byte[][,] MakeMask(int nz, int nx, int ny)
+        {
+            byte[][,] mask = new byte[nz][,];
+            for (int iz = 0; iz != nz; ++iz)
+            {
+                byte[,] plane = new byte[nx, ny];
+                mask[iz] = plane;
+                for (int ix = 0; ix < nx; ++ix)
+                {
+                    for(int iy = 0; iy < ny; ++iy)
+                    {
+                        plane[ix,iy] = 0;
+                    }
+                }
+            }
+            return mask;
+        }
+
         private void ButtonRBF_Click(object sender, RoutedEventArgs e)
         {
             // Create Volume for Structure
+            byte[][,] mask = MakeMask(168, 512, 512);
 
-            byte[][,] mask = new byte[180][,];
+            Point3f[] points = _ccol.Flatten();
+            Evaluator.InOut[] inout = new Evaluator.InOut[points.Length];
+            for(int k = 0; k != inout.Length; ++k)
+                inout[k] = (k == inout.Length-1) ? Evaluator.InOut.IN : Evaluator.InOut.BND;
 
-            for (int iz = 0; iz != 180; ++iz)
+            EvaluatorRBF eval = new EvaluatorRBF(points, inout);
+            eval.Evaluate(new Point3f(0.0f, 0.0f, 0.0f));
+            float[] weights = eval.Weights;
+
+            Point3D shift = _ccol.Shift;
+
+            for (int iz = (int)shift.Z - 6; iz != (int)shift.Z + 6; ++iz)
             {
-                mask[iz] = new byte[512, 512];
-                for (int ix = 0; ix < 512; ++ix)
+                float z = (float)iz + 0.5f;
+
+                byte[,] plane = mask[iz];
+                for (int ix = 0; ix != 512; ++ix)
                 {
-                    for(int iy = 0; iy < 512; ++iy)
+                    float x = (float)ix + 0.5f;
+                    for(int iy = 0; iy != 512; ++iy)
                     {
-                        mask[iz][ix, iy] = 0;
+                        float y = (float)iy + 0.5f;
 
-                        if (iz > 113 && iz < 143)
-                        {
-                            float q = (float)iz / 130.0f;
-                            q = Math.Min(q, 2.0f - q);
+                        float q = eval.Evaluate(new Point3f(x - (float)shift.X, y - (float)shift.Y, z - (float)shift.Z));
 
-                            float rad2 = 12.0f * 12.0f * (float)Math.Sqrt(q);
-                            if ((float)((ix-156)* (ix - 156) + (iy - 206) * (iy - 206)) <= rad2)
-                            {
-                                mask[iz][ix, iy] = 1;
-                            }
-                        }
+                        if (q > -0.01f)
+                            plane[ix, iy] = 1;
                     }
                 }
             }
@@ -343,6 +387,8 @@ namespace DICOMViewer
 
             CTSliceInfo[] slices = _scol.Slices;
 
+            // shall be used only once, because original slice data will be altered
+            // require data reloading
             for (int k = 0; k != slices.Length; ++k)
             {
                 short[,] buffer = slices[k].HounsfieldPixelBuffer;

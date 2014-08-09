@@ -37,24 +37,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x64\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\x64\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core">
@@ -110,30 +92,25 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DICOMViewer.ROIVOI\BoundingBox.cs" />
-    <Compile Include="DICOMViewer.ROIVOI\ContourCollection.cs" />
-    <Compile Include="DICOMViewer.Helper\CTSliceInfoCollection.cs" />
-    <Compile Include="DICOMViewer.Parsing\DICOMtags.cs" />
     <Compile Include="DICOMViewer.Helper\CTSliceInfo.cs" />
+    <Compile Include="DICOMViewer.Helper\CTSliceInfoCollection.cs" />
     <Compile Include="DICOMViewer.Parsing\DICOMParser.cs" />
     <Compile Include="DICOMViewer.Parsing\DICOMTagInfo.cs" />
+    <Compile Include="DICOMViewer.Parsing\DICOMtags.cs" />
     <Compile Include="DICOMViewer.Parsing\PrivateCodeDictionary.cs" />
     <Compile Include="DICOMViewer.Parsing\PrivateDICOMDictionary.cs" />
     <Compile Include="DICOMViewer.Parsing\PublicDICOMDictionary.cs" />
     <Compile Include="DICOMViewer.Parsing\SOPClassDictionary.cs" />
     <Compile Include="DICOMViewer.Parsing\TransferSyntaxDictionary.cs" />
     <Compile Include="DICOMViewer.ROIVOI\Contour.cs" />
+    <Compile Include="DICOMViewer.ROIVOI\ContourCollection.cs" />
     <Compile Include="DICOMViewer.ROIVOI\Directions.cs" />
-    <Compile Include="DICOMViewer.ROIVOI\Point3f.cs" />
-    <Compile Include="DICOMViewer.ROIVOI\Utils.cs" />
     <Compile Include="DICOMViewer.Volume\EdgeTable.cs" />
     <Compile Include="DICOMViewer.Volume\MarchingCubes.cs" />
     <Compile Include="DICOMViewer.Volume\TriTable.cs" />
     <Compile Include="DICOMViewer.Volume\VolumeView.xaml.cs">
       <DependentUpon>VolumeView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DICOMViewer.ROIVOI\Evaluator.cs" />
-    <Compile Include="DICOMViewer.ROIVOI\EvaluatorRBF.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -170,7 +147,16 @@
     </None>
     <AppDesigner Include="Properties\" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Externals\RBF\RBF.csproj">
+      <Project>{13C24F63-6280-4A97-A504-22FC4B8CF0D4}</Project>
+      <Name>RBF</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Externals\Utilities\Utilities.csproj">
+      <Project>{93653E36-9D31-4C33-9600-FCB43A22988B}</Project>
+      <Name>Utilities</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

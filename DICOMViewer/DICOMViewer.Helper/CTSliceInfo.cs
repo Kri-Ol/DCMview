@@ -88,11 +88,11 @@ namespace DICOMViewer.Helper
             {
                 BinaryReader br = new BinaryReader(File.Open(mFileName + HOUNSFIELD_EXT, FileMode.Open, FileAccess.Read, FileShare.Read));
 
-                for (int aRowIndex = 0; aRowIndex != mRowCount; ++aRowIndex)
+                for (int r = 0; r != mRowCount; ++r)
                 {
-                    for (int aColumnIndex = 0; aColumnIndex != mColumnCount; ++aColumnIndex)
+                    for (int c = 0; c != mColumnCount; ++c)
                     {
-                        HounsfieldPixelBuffer[aRowIndex, aColumnIndex] = br.ReadInt16();
+                        HounsfieldPixelBuffer[r, c] = br.ReadInt16();
                     }
                 }
                 br.Dispose();
@@ -121,9 +121,9 @@ namespace DICOMViewer.Helper
             aBinaryReader.BaseStream.Position = aStreamPosition;
 
             // Loop over all pixel data values
-            for (int aRowIndex = 0; aRowIndex != mRowCount; ++aRowIndex)
+            for (int r = 0; r != mRowCount; ++r)
             {
-                for (int aColumnIndex = 0; aColumnIndex != mColumnCount; ++aColumnIndex)
+                for (int c = 0; c != mColumnCount; ++c)
                 {
                     // For some images, the pixel buffer is smaller than '2Byte * RowCount * ColumnCount'
                     // That's why we need the check...
@@ -143,7 +143,7 @@ namespace DICOMViewer.Helper
                         aPixelValue = (short)((int)aPixelValue* aRescaleSlope + aRescaleIntercept);
 
                         // Value of the voxel is stored in Hounsfield Units
-                        HounsfieldPixelBuffer[aRowIndex, aColumnIndex] = aPixelValue;
+                        HounsfieldPixelBuffer[r, c] = aPixelValue;
                     }
                 }
             }

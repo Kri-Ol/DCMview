@@ -73,5 +73,10 @@ namespace DICOMViewer.ROIVOI
         {
             get { return _dir; }
         }
+
+        public double planepos
+        {
+            get { return _planepos; }
+        }
     }
 }
