@@ -279,14 +279,26 @@ namespace DICOMViewer
 
         private void ButtonVolumeBones_Click(object sender, RoutedEventArgs e)
         {
+            bool rc = _scol.BuildSortedSlicesArray();
+            if (!rc)
+            {
+                System.Windows.MessageBox.Show("There are skips in CTs!");
+                return;
+            }
             // Create Volume for Bones, IsoValue = +500 Hounsfield Units
-            CreateVolumeView(+500);
+            CreateVolumeView(+500, _scol.Slices);
         }
 
         private void ButtonVolumeSkin_Click(object sender, RoutedEventArgs e)
         {
+            bool rc = _scol.BuildSortedSlicesArray();
+            if (!rc)
+            {
+                System.Windows.MessageBox.Show("There are skips in CTs!");
+                return;
+            }
             // Create Volume for Skin, IsoValue = -800 Hounsfield Units
-            CreateVolumeView(-800);
+            CreateVolumeView(-800, _scol.Slices);
         }
 
         private static byte[][,] MakeMask(int nz, int nx, int ny)
@@ -309,6 +321,12 @@ namespace DICOMViewer
 
         private void ButtonRBF_Click(object sender, RoutedEventArgs e)
         {
+            bool rc = _scol.BuildSortedSlicesArray();
+            if (!rc)
+            {
+                System.Windows.MessageBox.Show("There are skips in CTs!");
+                return;
+            }
             // Create Volume for Structure
             byte[][,] mask = MakeMask(168, 512, 512);
 
@@ -343,21 +361,12 @@ namespace DICOMViewer
                 }
             }
 
-            CreateMaskedVolumeView(+500, mask);
+            CreateMaskedVolumeView(+500, mask, _scol.Slices);
         }
 
         // Helper method to create and show the Volume View Dialog
-        private void CreateVolumeView(short theIsoValueInHounsfield)
+        private void CreateVolumeView(short theIsoValueInHounsfield, CTSliceInfo[] slices)
         {
-            bool rc = _scol.BuildSortedSlicesArray();
-            if (!rc)
-            {
-                System.Windows.MessageBox.Show("There are skips in CTs!");
-                return;
-            }
-
-            CTSliceInfo[] slices = _scol.Slices;
-
             if (slices.Length > 2)
             {
                 VolumeView aVolumeViewWindow = new VolumeView();
@@ -376,17 +385,8 @@ namespace DICOMViewer
                 System.Windows.MessageBox.Show("The series does not have suffcient CT Slices in order to generate a Volume View!");
         }
 
-        private void CreateMaskedVolumeView(short theIsoValueInHounsfield, byte[][,] mask)
+        private void CreateMaskedVolumeView(short theIsoValueInHounsfield, byte[][,] mask, CTSliceInfo[] slices)
         {
-            bool rc = _scol.BuildSortedSlicesArray();
-            if (!rc)
-            {
-                System.Windows.MessageBox.Show("There are skips in CTs!");
-                return;
-            }
-
-            CTSliceInfo[] slices = _scol.Slices;
-
             // shall be used only once, because original slice data will be altered
             // require data reloading
             for (int k = 0; k != slices.Length; ++k)
