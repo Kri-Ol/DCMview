@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Xml.Linq;
 using System.Windows.Media.Media3D;
@@ -71,7 +70,7 @@ namespace DICOMViewer
                 Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
 
                 IODRepository mIODRepository = new IODRepository();
-                this.mIODTree.Items.Clear();
+                this._IODTree.Items.Clear();
 
                 string aSelectedFilePath = dialog.SelectedPath;
                 string[] aFileNameList = Directory.GetFiles(aSelectedFilePath, "*.dcm", SearchOption.AllDirectories);
@@ -87,7 +86,7 @@ namespace DICOMViewer
                 foreach (string aPatientName in mIODRepository.GetPatients())
                 {
                     TreeViewItem aPatientItem = new TreeViewItem() { Header = aPatientName };
-                    this.mIODTree.Items.Add(aPatientItem);
+                    this._IODTree.Items.Add(aPatientItem);
 
                     foreach (string aSOPClass in mIODRepository.GetSOPClassNames(aPatientName))
                     {
@@ -194,7 +193,7 @@ namespace DICOMViewer
         //    the ImageFlow button, the volume buttons and the bitmap is shown.
         private void mIODTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            TreeViewItem aSelectedNode = this.mIODTree.SelectedItem as TreeViewItem;
+            TreeViewItem aSelectedNode = this._IODTree.SelectedItem as TreeViewItem;
             if (aSelectedNode == null)
                 return;
 
@@ -219,7 +218,9 @@ namespace DICOMViewer
 
             // Add all DICOM attributes to the tree
             foreach (XElement xe in anIOD.XDocument.Descendants("DataSet").First().Elements("DataElement"))
+            {
                 AddDICOMAttributeToTree(aRootNode, xe);
+            }
 
             // In case the IOD does have a processable pixel data, the ImageFlow button, the volume buttons and the bitmap is shown.
             // Otherwise, only the DICOM attributes are shown and the first and last grid row is hided.
@@ -227,25 +228,25 @@ namespace DICOMViewer
             {
                 mGrid.RowDefinitions.First().Height = new GridLength(30);
                 mGrid.RowDefinitions.Last().Height = new GridLength(400);
-                CTSliceInfo aCTSliceInfo = _scol.Retrieve(anIOD.FileName);
-                if (aCTSliceInfo == null)
+                CTSliceInfo ct = _scol.Retrieve(anIOD.FileName);
+                if (ct == null)
                 {
-                    aCTSliceInfo = new Helper.CTSliceInfo(anIOD.XDocument, anIOD.FileName);
-                    _scol.Add(aCTSliceInfo);
+                    ct = new Helper.CTSliceInfo(anIOD.XDocument, anIOD.FileName);
+                    _scol.Add(ct);
                 }
-                mImage.Source = aCTSliceInfo.GetPixelBufferAsBitmap();
+                mImage.Source = CTSliceHelpers.GetPixelBufferAsBitmap(ct);
             }
             else
             {
                 mGrid.RowDefinitions.First().Height = new GridLength(0);
-                mGrid.RowDefinitions.Last().Height = new GridLength(0);
+                mGrid.RowDefinitions.Last().Height  = new GridLength(0);
             }
         }
 
         // Helper method to create and show the Image Flow Dialog
         private void ButtonImageFlow_Click(object sender, RoutedEventArgs e)
         {
-            TreeViewItem SelectedNode = this.mIODTree.SelectedItem as TreeViewItem;
+            TreeViewItem SelectedNode = this._IODTree.SelectedItem as TreeViewItem;
             if (SelectedNode == null)
                 return;
 
@@ -253,7 +254,7 @@ namespace DICOMViewer
 
             Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
 
-            ImageFlowView aImageFlowWindow = new ImageFlowView();
+            ImageFlowView imageFlowWindow = new ImageFlowView();
 
             // Add each CT Slice of the series to the Image Flow Window.
             // Remember: the CT Slices have already been added to the IOD Tree in sorted order (Z-Value ascending).
@@ -267,14 +268,14 @@ namespace DICOMViewer
                 // XDocument and FileName are needed to access the pixel data in order to build up the image later.
                 // For a CT Slice, the SortOrder corresponds to its Z-Value. This parameter is only passed for display purposes.
                 if(anIOD.IsPixelDataProcessable())
-                    aImageFlowWindow.AddImageSlice(anIOD.XDocument, anIOD.FileName, anIOD.SortOrder.ToString(CultureInfo.InvariantCulture));
+                    imageFlowWindow.AddImageSlice(anIOD.XDocument, anIOD.FileName, anIOD.SortOrder.ToString(CultureInfo.InvariantCulture));
             }
 
-            aImageFlowWindow.PostInitialize();
-            aImageFlowWindow.Title = "DICOM Viewer - Image Flow";
+            imageFlowWindow.PostInitialize();
+            imageFlowWindow.Title = "DICOM Viewer - Image Flow";
 
             Mouse.OverrideCursor = null;
-            aImageFlowWindow.ShowDialog();
+            imageFlowWindow.ShowDialog();
         }
 
         private void ButtonVolumeBones_Click(object sender, RoutedEventArgs e)
@@ -327,6 +328,8 @@ namespace DICOMViewer
                 System.Windows.MessageBox.Show("There are skips in CTs!");
                 return;
             }
+
+
             // Create Volume for Structure
             byte[][,] mask = MakeMask(168, 512, 512);
 
@@ -391,12 +394,13 @@ namespace DICOMViewer
             // require data reloading
             for (int k = 0; k != slices.Length; ++k)
             {
-                short[,] buffer = slices[k].HounsfieldPixelBuffer;
+                CTSliceInfo ct = slices[k];
+                short[,] buffer = ct.HounsfieldPixelBuffer;
                 byte[,] maska   = mask[k];
 
-                for (int r = 0; r != 512; ++r)
+                for (int r = 0; r != ct.RowCount; ++r)
                 {
-                    for (int c = 0; c != 512; ++c)
+                    for (int c = 0; c != ct.ColumnCount; ++c)
                     {
                         if (maska[r, c] > 0)
                             buffer[r, c] = theIsoValueInHounsfield;

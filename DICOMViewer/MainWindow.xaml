@@ -24,7 +24,7 @@
             </MenuItem>
             <MenuItem Header="_About" Click="MenuItem_AboutClick" />
         </Menu>
-        <TreeView Grid.Row="1" Grid.Column="0" Margin="5,5,5,5" Name="mIODTree" BorderThickness="0" FontSize="12" FontFamily="Courier New" SelectedItemChanged="mIODTree_SelectedItemChanged" />
+        <TreeView Grid.Row="1" Grid.Column="0" Margin="5,5,5,5" Name="_IODTree" BorderThickness="0" FontSize="12" FontFamily="Courier New" SelectedItemChanged="mIODTree_SelectedItemChanged" />
         <Grid Grid.Row="1" Grid.Column="1" Name="mGrid" >
             <Grid.RowDefinitions>
                 <!-- Height of first row (Buttons) and last row (Bitmap) is set to zero in order to hide them -->

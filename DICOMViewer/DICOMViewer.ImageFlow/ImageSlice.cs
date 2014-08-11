@@ -16,23 +16,27 @@ namespace DICOMViewer.ImageFlow
 {
     class ImageSlice : ModelVisual3D
     {
-        private XDocument mXDocument = null;
-        private string mFileName = null;
-        private string mZValue = null;
-        private ModelVisual3D m3DModel = null;
-        private Model3DGroup mModelGroup = null;
-        private AxisAngleRotation3D mRotation = null;
-        private TranslateTransform3D mTranslation = null;
-        private WriteableBitmap mBitmap = null;
-        private ImageBrush mImageBrush = null;
+        private XDocument _XDocument = null;
+        private string    _FileName = null;
+        private string    _ZValue = null;
+
+        private ModelVisual3D _3DModel = null;
+        private Model3DGroup  _ModelGroup = null;
+
+        private AxisAngleRotation3D  _Rotation = null;
+        private TranslateTransform3D _Translation = null;
+
+        private WriteableBitmap _Bitmap = null;
+        private ImageBrush      _ImageBrush = null;
 
         // Create new ImageSlice
         public ImageSlice(XDocument theXDocument, string theFileName, string theZValue, ModelVisual3D the3DModel)
         {
-            mXDocument = theXDocument;
-            mFileName = theFileName;
-            mZValue = theZValue;
-            m3DModel = the3DModel;
+            _XDocument = theXDocument;
+            _FileName  = theFileName;
+
+            _ZValue  = theZValue;
+            _3DModel = the3DModel;
         }
 
         public void Animate(double aRotationAngle, double aTranslationX, double aTranslationY, double aTranslationZ, TimeSpan aAnimationDuration)
@@ -42,62 +46,62 @@ namespace DICOMViewer.ImageFlow
             var yAnimation = new DoubleAnimation(aTranslationY, aAnimationDuration);
             var zAnimation = new DoubleAnimation(aTranslationZ, aAnimationDuration);
 
-            if(mRotation != null)
-                mRotation.BeginAnimation(AxisAngleRotation3D.AngleProperty, rotateAnimation);
+            if(_Rotation != null)
+                _Rotation.BeginAnimation(AxisAngleRotation3D.AngleProperty, rotateAnimation);
 
-            if (mTranslation != null)
+            if (_Translation != null)
             {
-                mTranslation.BeginAnimation(TranslateTransform3D.OffsetXProperty, xAnimation);
-                mTranslation.BeginAnimation(TranslateTransform3D.OffsetYProperty, yAnimation);
-                mTranslation.BeginAnimation(TranslateTransform3D.OffsetZProperty, zAnimation);
+                _Translation.BeginAnimation(TranslateTransform3D.OffsetXProperty, xAnimation);
+                _Translation.BeginAnimation(TranslateTransform3D.OffsetYProperty, yAnimation);
+                _Translation.BeginAnimation(TranslateTransform3D.OffsetZProperty, zAnimation);
             }
         }
 
         public void SetBitmap()
         {
-            if (mBitmap == null)
+            if (_Bitmap == null)
             {
-                CTSliceInfo CTSliceInfo = new CTSliceInfo(mXDocument, mFileName);
+                CTSliceInfo ct = new CTSliceInfo(_XDocument, _FileName);
 
-                mBitmap = CTSliceInfo.GetPixelBufferAsBitmap();
-                mBitmap.Freeze();
+                _Bitmap = CTSliceHelpers.GetPixelBufferAsBitmap(ct);
+                _Bitmap.Freeze();
                 
-                mImageBrush = new ImageBrush();
-                mImageBrush.ImageSource = mBitmap;
+                _ImageBrush             = new ImageBrush();
+                _ImageBrush.ImageSource = _Bitmap;
                 
-                mModelGroup = new Model3DGroup();
-                mModelGroup.Children.Add(new GeometryModel3D(Tessellate(), new DiffuseMaterial(mImageBrush)));
-                this.Content = mModelGroup;
+                _ModelGroup = new Model3DGroup();
+                _ModelGroup.Children.Add(new GeometryModel3D(Tessellate(), new DiffuseMaterial(_ImageBrush)));
+                this.Content = _ModelGroup;
                 
-                m3DModel.Children.Add(this);
+                _3DModel.Children.Add(this);
             }
         }
 
         public void ResetBitmap()
         {
-            if (mImageBrush != null)
-                mImageBrush.ImageSource = null;
+            if (_ImageBrush != null)
+                _ImageBrush.ImageSource = null;
 
-            mImageBrush = null;
-            mBitmap = null;
-            m3DModel.Children.Remove(this);
+            _ImageBrush = null;
+            _Bitmap = null;
+            _3DModel.Children.Remove(this);
         }
 
         new public void Transform(double aRotationAngle, double aTranslationX, double aTranslationY, double aTranslationZ)
         {
-            mRotation = new AxisAngleRotation3D(new Vector3D(0, 1, 0), aRotationAngle);
-            mTranslation = new TranslateTransform3D(aTranslationX, aTranslationY, aTranslationZ);
+            _Rotation = new AxisAngleRotation3D(new Vector3D(0, 1, 0), aRotationAngle);
+            _Translation = new TranslateTransform3D(aTranslationX, aTranslationY, aTranslationZ);
 
             var transformGroup = new Transform3DGroup();
-            transformGroup.Children.Add(new RotateTransform3D(mRotation));
-            transformGroup.Children.Add(mTranslation);
+            transformGroup.Children.Add(new RotateTransform3D(_Rotation));
+            transformGroup.Children.Add(_Translation);
 
-            if(mModelGroup != null)
-                mModelGroup.Transform = transformGroup;
+            if(_ModelGroup != null)
+                _ModelGroup.Transform = transformGroup;
         }
 
-        public string FileName { get { return mFileName; } }
-        public string ZValue { get { return mZValue; } }
+        public string FileName { get { return _FileName; } }
+        public string ZValue { get { return _ZValue; } }
 
         private static Geometry3D Tessellate()
         {

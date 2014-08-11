@@ -7,6 +7,64 @@ using System.Windows.Media.Media3D;
 
 using DICOMViewer.Helper;
 
+/*
+private void convolution_with_a_gauss_filter(Int32 N)
+{
+    Int32 Nh = N / 2;
+    Int32 x, xx, xxx, y, yy, yyy;
+    Int64 t0, t1;
+    float[,] kernel = new float[N, N]; //quadratic Gauss kernel
+    float sum_kernel = 0.0f;
+    float sumR, sumG, sumB, weight, Rf, Gf, Bf;
+    Cursor.Current = Cursors.WaitCursor;
+    t0 = DateTime.Now.Ticks;
+    //Construction of a suitable 2D-Gaussian bell-shape kernel:
+    //The corner elements of the kernel are Nh*sqrt(2) away from its center
+    //and therefore obtain the lowest values.
+    //We adjust the parameter a of the e-function y = e -(a*x2) so,
+    //that always (at any kernel size except 3x3) these corners obtain at least 1% weight.
+    double a = 1.0f;
+    if (N > 3) a = -2 * Nh * Nh / Math.Log(0.01);
+    //fill the kernel with elements depending on their distance and on a.
+    for (y = 0; y < N; y++)
+        for (x = 0; x < N; x++)
+        {
+            double dist = Math.Sqrt((x - Nh) * (x - Nh) + (y - Nh) * (y - Nh));
+            sum_kernel += kernel[y, x] = (float)(Math.Exp(-dist * dist / a));
+        }
+    //Convolution
+    for (y = Nh; y < b0.Height - Nh; y++) //==================
+    {
+        for (x = Nh; x < b0.Width - Nh; x++) //===============
+        {
+            sumR = sumG = sumB = 0.0f;
+            for (yy = -Nh; yy <= Nh; yy++) //=============
+            {
+                yyy = y + yy;
+                for (xx = -Nh; xx <= Nh; xx++)//========
+                {
+                    weight = kernel[yy + Nh, xx + Nh];
+                    xxx = x + xx;
+                    sumR += weight * R0[yyy, xxx];
+                    sumG += weight * G0[yyy, xxx];
+                    sumB += weight * B0[yyy, xxx];
+                } //====== end for (int xx... ================
+            } //======== end for (int yy... ==================
+            Rf = sumR / sum_kernel; Gf = sumG / sum_kernel; Bf = sumB / sum_kernel;
+            b2.SetPixel(x, y, Color.FromArgb(Convert.ToInt32(Rf),
+                                               Convert.ToInt32(Gf),
+                                               Convert.ToInt32(Bf)));
+        } //============ end for (int x... =====================
+    } //============== end for (int y... =======================
+    t1 = DateTime.Now.Ticks;
+    s2 = "Simple quadratic Gauss filter\r\n" +
+         "Image:  " + b0.Width.ToString() + " x " + b0.Height.ToString() + "\r\n" +
+         "Filter: " + N.ToString() + " x " + N.ToString() + "\r\n" +
+         "Filter Time: " + String.Format("{0:F1}", (t1 - t0) / 1000000f) + " MegaTicks";
+    Cursor.Current = Cursors.Arrow;
+}
+*/
+
 namespace DICOMViewer.Volume
 {
     public partial class VolumeView : Window
@@ -99,15 +157,19 @@ namespace DICOMViewer.Volume
             CTSliceInfo lastCT  = slices[slices.Length - 1];
 
             List<Triangle> triangles = ComputeTriangles(slices, theIsoValue);
-
-            MeshGeometry3D aMesh = ComputeMesh(triangles);
+            MeshGeometry3D mesh      = ComputeMesh(triangles);
 
             // Last step is to give the mesh to the WPF viewport in order to render it.
-            mGeometryModel = new GeometryModel3D(aMesh, new DiffuseMaterial(new SolidColorBrush(Colors.Red)));
+            mGeometryModel = new GeometryModel3D(mesh, new DiffuseMaterial(new SolidColorBrush(Colors.Red)));
             mGeometryModel.Transform = new Transform3DGroup();
+
+//            GeometryModel3D qqq = new GeometryModel3D(ComputeMesh(ComputeTriangles(slices, theIsoValue-100)),
+//                                                      new DiffuseMaterial(new SolidColorBrush(Colors.Blue)));
+//            qqq.Transform = mGeometryModel.Transform;
 
             Model3DGroup a3DGroup = new Model3DGroup();
             a3DGroup.Children.Add(mGeometryModel);
+//            a3DGroup.Children.Add(qqq);
             m3DModel.Content = a3DGroup;
 
             // Dump some useful size information.

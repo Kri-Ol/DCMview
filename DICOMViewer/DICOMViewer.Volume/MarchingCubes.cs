@@ -46,14 +46,14 @@ namespace DICOMViewer.Volume
             p[6] = new Point3D( X_Right_Front, Y_Top_Front ,    Z_Front);
             p[7] = new Point3D( X_Left_Front,  Y_Top_Front ,    Z_Front);
 
-            val[0] = CTSliceBack.GetHounsfieldPixelValue_Fast(theRowIndex + 1, theColumnIndex);
-            val[1] = CTSliceBack.GetHounsfieldPixelValue_Fast(theRowIndex + 1, theColumnIndex + 1);
-            val[2] = CTSliceFront.GetHounsfieldPixelValue_Fast(theRowIndex + 1, theColumnIndex + 1);
-            val[3] = CTSliceFront.GetHounsfieldPixelValue_Fast(theRowIndex + 1, theColumnIndex);
-            val[4] = CTSliceBack.GetHounsfieldPixelValue_Fast(theRowIndex, theColumnIndex);
-            val[5] = CTSliceBack.GetHounsfieldPixelValue_Fast(theRowIndex, theColumnIndex + 1);
-            val[6] = CTSliceFront.GetHounsfieldPixelValue_Fast(theRowIndex, theColumnIndex + 1);
-            val[7] = CTSliceFront.GetHounsfieldPixelValue_Fast(theRowIndex, theColumnIndex);
+            val[0] = CTSliceBack[theRowIndex + 1, theColumnIndex];
+            val[1] = CTSliceBack[theRowIndex + 1, theColumnIndex + 1];
+            val[2] = CTSliceFront[theRowIndex + 1, theColumnIndex + 1];
+            val[3] = CTSliceFront[theRowIndex + 1, theColumnIndex];
+            val[4] = CTSliceBack[theRowIndex, theColumnIndex];
+            val[5] = CTSliceBack[theRowIndex, theColumnIndex + 1];
+            val[6] = CTSliceFront[theRowIndex, theColumnIndex + 1];
+            val[7] = CTSliceFront[theRowIndex, theColumnIndex];
         }
     }
 
