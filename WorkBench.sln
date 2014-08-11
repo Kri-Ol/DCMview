@@ -1,8 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.21901.1
-MinimumVisualStudioVersion = 10.0.40219.1
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DICOMViewer", "DICOMViewer\DICOMViewer.csproj", "{E77A55B1-7875-421B-886C-02575B5DF0E4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RBF", "Externals\RBF\RBF.csproj", "{13C24F63-6280-4A97-A504-22FC4B8CF0D4}"

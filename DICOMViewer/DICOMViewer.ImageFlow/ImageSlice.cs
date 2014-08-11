@@ -16,7 +16,8 @@ namespace DICOMViewer.ImageFlow
 {
     class ImageSlice : ModelVisual3D
     {
-        private XDocument _XDocument = null;
+        private CTSliceInfo _ct;
+
         private string    _FileName = null;
         private string    _ZValue = null;
 
@@ -26,16 +27,17 @@ namespace DICOMViewer.ImageFlow
         private AxisAngleRotation3D  _Rotation = null;
         private TranslateTransform3D _Translation = null;
 
-        private WriteableBitmap _Bitmap = null;
-        private ImageBrush      _ImageBrush = null;
+        private WriteableBitmap _bitmap     = null;
+        private ImageBrush      _imageBrush = null;
 
         // Create new ImageSlice
-        public ImageSlice(XDocument theXDocument, string theFileName, string theZValue, ModelVisual3D the3DModel)
+        public ImageSlice(CTSliceInfo ct, ModelVisual3D the3DModel)
         {
-            _XDocument = theXDocument;
-            _FileName  = theFileName;
+            _ct = ct;
 
-            _ZValue  = theZValue;
+            _FileName  = ct.FileName;
+            _ZValue    = ct.UpperLeft_Z.ToString();
+
             _3DModel = the3DModel;
         }
 
@@ -59,19 +61,16 @@ namespace DICOMViewer.ImageFlow
 
         public void SetBitmap()
         {
-            if (_Bitmap == null)
+            if (_bitmap == null)
             {
-                CTSliceInfo ct = new CTSliceInfo(_XDocument, _FileName);
-                ct.GetHounsfieldPixelValue(0, 0);
-
-                _Bitmap = CTSliceHelpers.GetPixelBufferAsBitmap(ct);
-                _Bitmap.Freeze();
+                _bitmap = CTSliceHelpers.GetPixelBufferAsBitmap(_ct);
+                _bitmap.Freeze();
                 
-                _ImageBrush             = new ImageBrush();
-                _ImageBrush.ImageSource = _Bitmap;
+                _imageBrush             = new ImageBrush();
+                _imageBrush.ImageSource = _bitmap;
                 
                 _ModelGroup = new Model3DGroup();
-                _ModelGroup.Children.Add(new GeometryModel3D(Tessellate(), new DiffuseMaterial(_ImageBrush)));
+                _ModelGroup.Children.Add(new GeometryModel3D(Tessellate(), new DiffuseMaterial(_imageBrush)));
                 this.Content = _ModelGroup;
                 
                 _3DModel.Children.Add(this);
@@ -80,11 +79,11 @@ namespace DICOMViewer.ImageFlow
 
         public void ResetBitmap()
         {
-            if (_ImageBrush != null)
-                _ImageBrush.ImageSource = null;
+            if (_imageBrush != null)
+                _imageBrush.ImageSource = null;
 
-            _ImageBrush = null;
-            _Bitmap = null;
+            _imageBrush = null;
+            _bitmap     = null;
             _3DModel.Children.Remove(this);
         }
 

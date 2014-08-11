@@ -149,7 +149,7 @@ namespace DICOMViewer
 
         private void MenuItem_AboutClick(object sender, RoutedEventArgs e)
         {
-            System.Windows.MessageBox.Show("DICOM WorkBench\n\nhttp://www.codeproject.com/Articles/466955/Medical-image-visualization-using-WPF\nhttp://www.codeproject.com/Articles/36014/DICOM-Image-Viewer\n...@xcision.com");
+            System.Windows.MessageBox.Show("DICOM WorkBench\n\nwww.codeproject.com/Articles/466955/Medical-image-visualization-using-WPF\nd3dal3.blogspot.com/2008/10/wpf-cover-flow-tutorial-part-1.html\nwww.codeproject.com/Articles/36014/DICOM-Image-Viewer\n...@xcision.com");
         }
 
         // Helper method to add one DICOM attribute to the DICOM Tag Tree.
@@ -246,29 +246,24 @@ namespace DICOMViewer
         // Helper method to create and show the Image Flow Dialog
         private void ButtonImageFlow_Click(object sender, RoutedEventArgs e)
         {
-            TreeViewItem SelectedNode = this._IODTree.SelectedItem as TreeViewItem;
-            if (SelectedNode == null)
+            bool rc = _scol.BuildSortedSlicesArray();
+            if (!rc)
+            {
+                System.Windows.MessageBox.Show("There are skips in CTs!");
                 return;
-
-            TreeViewItem ParentNode = SelectedNode.Parent as TreeViewItem;
+            }
 
             Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
 
             ImageFlowView imageFlowWindow = new ImageFlowView();
 
             // Add each CT Slice of the series to the Image Flow Window.
-            // Remember: the CT Slices have already been added to the IOD Tree in sorted order (Z-Value ascending).
-            foreach (TreeViewItem aChildNode in ParentNode.Items)
+            // Remember: the CT Slices have already been added to the array in sorted order (Z-Value ascending).
+            foreach (var ct in _scol.Slices)
             {
-                IOD anIOD = aChildNode.Tag as IOD;
-                if (anIOD == null)
-                    break;
-
                 // Each CT Slice is added to the Image Flow Window as an own slice.
-                // XDocument and FileName are needed to access the pixel data in order to build up the image later.
                 // For a CT Slice, the SortOrder corresponds to its Z-Value. This parameter is only passed for display purposes.
-                if(anIOD.IsPixelDataProcessable())
-                    imageFlowWindow.AddImageSlice(anIOD.XDocument, anIOD.FileName, anIOD.SortOrder.ToString(CultureInfo.InvariantCulture));
+                imageFlowWindow.AddImageSlice(ct);
             }
 
             imageFlowWindow.PostInitialize();
