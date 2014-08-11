@@ -329,7 +329,6 @@ namespace DICOMViewer
                 return;
             }
 
-
             // Create Volume for Structure
             byte[][,] mask = MakeMask(168, 512, 512);
 

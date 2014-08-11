@@ -62,6 +62,7 @@ namespace DICOMViewer.ImageFlow
             if (_Bitmap == null)
             {
                 CTSliceInfo ct = new CTSliceInfo(_XDocument, _FileName);
+                ct.GetHounsfieldPixelValue(0, 0);
 
                 _Bitmap = CTSliceHelpers.GetPixelBufferAsBitmap(ct);
                 _Bitmap.Freeze();
