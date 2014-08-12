@@ -16,19 +16,22 @@ namespace DICOMViewer.ImageFlow
 {
     class ImageSlice : ModelVisual3D
     {
-        private CTSliceInfo _ct;
+        private CTSliceInfo _ct = null;
 
         private string    _FileName = null;
-        private string    _ZValue = null;
+        private string    _ZValue   = null;
 
         private ModelVisual3D _3DModel = null;
         private Model3DGroup  _ModelGroup = null;
 
-        private AxisAngleRotation3D  _Rotation = null;
+        private AxisAngleRotation3D  _Rotation    = null;
         private TranslateTransform3D _Translation = null;
 
         private WriteableBitmap _bitmap     = null;
         private ImageBrush      _imageBrush = null;
+
+        public string FileName { get { return _FileName; } }
+        public string ZValue { get { return _ZValue; } }
 
         // Create new ImageSlice
         public ImageSlice(CTSliceInfo ct, ModelVisual3D the3DModel)
@@ -89,7 +92,7 @@ namespace DICOMViewer.ImageFlow
 
         new public void Transform(double aRotationAngle, double aTranslationX, double aTranslationY, double aTranslationZ)
         {
-            _Rotation = new AxisAngleRotation3D(new Vector3D(0, 1, 0), aRotationAngle);
+            _Rotation    = new AxisAngleRotation3D(new Vector3D(0, 1, 0), aRotationAngle);
             _Translation = new TranslateTransform3D(aTranslationX, aTranslationY, aTranslationZ);
 
             var transformGroup = new Transform3DGroup();
@@ -99,9 +102,6 @@ namespace DICOMViewer.ImageFlow
             if(_ModelGroup != null)
                 _ModelGroup.Transform = transformGroup;
         }
-
-        public string FileName { get { return _FileName; } }
-        public string ZValue { get { return _ZValue; } }
 
         private static Geometry3D Tessellate()
         {

@@ -28,7 +28,7 @@ namespace DICOMViewer
 #region Data
         private IODRepository         _IODRepo = null;
         private CTSliceInfoCollection _scol    = null;
-        private ContourCollection     _ccol = null;
+        private ContourCollection     _ccol    = null;
 #endregion
 
         public MainWindow()
@@ -193,53 +193,54 @@ namespace DICOMViewer
         //    the ImageFlow button, the volume buttons and the bitmap is shown.
         private void mIODTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            TreeViewItem aSelectedNode = this._IODTree.SelectedItem as TreeViewItem;
+            TreeViewItem aSelectedNode = _IODTree.SelectedItem as TreeViewItem;
             if (aSelectedNode == null)
                 return;
 
             // Clear old content
-            this.mDICOMTagTree.Items.Clear();
-            mGrid.RowDefinitions.First().Height = new GridLength(0);
-            mGrid.RowDefinitions.Last().Height = new GridLength(0);
+            _DICOMTagTree.Items.Clear();
+            _Grid.RowDefinitions.First().Height = new GridLength(0);
+            _Grid.RowDefinitions.Last().Height  = new GridLength(0);
 
             IOD anIOD = aSelectedNode.Tag as IOD;
             if (anIOD == null)
                 return;
 
             // Set the FileName as root node
-            string[] split = anIOD.FileName.Split(new Char[] { '\\' });
-            string aFileName = split[split.Length-1];
 
-            TreeViewItem aRootNode = new TreeViewItem() { Header = string.Format("File: {0}", aFileName) };
-            this.mDICOMTagTree.Items.Add(aRootNode);
+            string aFileName = Path.GetFileName(anIOD.FileName);
+
+            TreeViewItem rootNode = new TreeViewItem() { Header = string.Format("File: {0}", aFileName) };
+            _DICOMTagTree.Items.Add(rootNode);
 
             // Expand the root node
-            aRootNode.IsExpanded = true;
+            rootNode.IsExpanded = true;
 
             // Add all DICOM attributes to the tree
             foreach (XElement xe in anIOD.XDocument.Descendants("DataSet").First().Elements("DataElement"))
             {
-                AddDICOMAttributeToTree(aRootNode, xe);
+                AddDICOMAttributeToTree(rootNode, xe);
             }
 
             // In case the IOD does have a processable pixel data, the ImageFlow button, the volume buttons and the bitmap is shown.
             // Otherwise, only the DICOM attributes are shown and the first and last grid row is hided.
             if (anIOD.IsPixelDataProcessable())
             {
-                mGrid.RowDefinitions.First().Height = new GridLength(30);
-                mGrid.RowDefinitions.Last().Height = new GridLength(400);
                 CTSliceInfo ct = _scol.Retrieve(anIOD.FileName);
                 if (ct == null)
                 {
                     ct = new Helper.CTSliceInfo(anIOD.XDocument, anIOD.FileName);
                     _scol.Add(ct);
                 }
-                mImage.Source = CTSliceHelpers.GetPixelBufferAsBitmap(ct);
+                _Grid.RowDefinitions.First().Height = new GridLength(30);
+                _Grid.RowDefinitions.Last().Height  = new GridLength(ct.RowCount+16);
+
+                _Image.Source = CTSliceHelpers.GetPixelBufferAsBitmap(ct);
             }
             else
             {
-                mGrid.RowDefinitions.First().Height = new GridLength(0);
-                mGrid.RowDefinitions.Last().Height  = new GridLength(0);
+                _Grid.RowDefinitions.First().Height = new GridLength(0);
+                _Grid.RowDefinitions.Last().Height  = new GridLength(0);
             }
         }
 
@@ -297,18 +298,18 @@ namespace DICOMViewer
             CreateVolumeView(-800, _scol.Slices);
         }
 
-        private static byte[][,] MakeMask(int nz, int nx, int ny)
+        private static byte[][,] MakeMask(int nz, int nr, int nc)
         {
             byte[][,] mask = new byte[nz][,];
             for (int iz = 0; iz != nz; ++iz)
             {
-                byte[,] plane = new byte[nx, ny];
+                byte[,] plane = new byte[nr, nc];
                 mask[iz] = plane;
-                for (int ix = 0; ix < nx; ++ix)
+                for (int r = 0; r != nr; ++r)
                 {
-                    for(int iy = 0; iy < ny; ++iy)
+                    for(int c = 0; c != nc; ++c)
                     {
-                        plane[ix,iy] = 0;
+                        plane[r,c] = 0;
                     }
                 }
             }
@@ -324,8 +325,13 @@ namespace DICOMViewer
                 return;
             }
 
+            int nz = _scol.Slices.Length;
+
+            int nr = _scol.Slices[0].RowCount;
+            int nc = _scol.Slices[0].ColumnCount;
+
             // Create Volume for Structure
-            byte[][,] mask = MakeMask(168, 512, 512);
+            byte[][,] mask = MakeMask(nz, nr, nc);
 
             Point3f[] points = _ccol.Flatten();
             Evaluator.InOut[] inout = new Evaluator.InOut[points.Length];
@@ -343,17 +349,17 @@ namespace DICOMViewer
                 float z = (float)iz + 0.5f;
 
                 byte[,] plane = mask[iz];
-                for (int ix = 0; ix != 512; ++ix)
+                for (int r = 0; r != nr; ++r)
                 {
-                    float x = (float)ix + 0.5f;
-                    for(int iy = 0; iy != 512; ++iy)
+                    float x = (float)r + 0.5f;
+                    for(int c = 0; c != nc; ++c)
                     {
-                        float y = (float)iy + 0.5f;
+                        float y = (float)c + 0.5f;
 
                         float q = eval.Evaluate(new Point3f(x - (float)shift.X, y - (float)shift.Y, z - (float)shift.Z));
 
                         if (q > -0.01f)
-                            plane[ix, iy] = 1;
+                            plane[r, c] = 1;
                     }
                 }
             }

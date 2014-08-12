@@ -17,8 +17,8 @@ namespace DICOMViewer.Helper
     {
         private const string HOUNSFIELD_EXT = ".hsu";
 
-        private XDocument _XDocument = null;
-        private string    _FileName  = null;
+        private readonly XDocument _XDocument = null;
+        private readonly string    _FileName  = null;
 
         private int _ColumnCount = -1;
         private int _RowCount    = -1;
@@ -66,11 +66,11 @@ namespace DICOMViewer.Helper
 
             _SliceLoc = DICOMParserUtility.GetDICOMAttributeAsInt(theXDocument, DICOMTAG.SLICE_LOCATION);
 
-            string aImagePositionPatientString = DICOMParserUtility.GetDICOMAttributeAsString(theXDocument, DICOMTAG.IMAGE_POSITION_PATIENT);
-            string[] aImagePositionPatientArray = aImagePositionPatientString.Split('\\');
-            _UpperLeft_X = Convert.ToDouble(aImagePositionPatientArray[0], CultureInfo.InvariantCulture);
-            _UpperLeft_Y = Convert.ToDouble(aImagePositionPatientArray[1], CultureInfo.InvariantCulture);
-            _UpperLeft_Z = Convert.ToDouble(aImagePositionPatientArray[2], CultureInfo.InvariantCulture);
+            string   imagePositionPatientString = DICOMParserUtility.GetDICOMAttributeAsString(theXDocument, DICOMTAG.IMAGE_POSITION_PATIENT);
+            string[] imagePositionPatientArray  = imagePositionPatientString.Split('\\');
+            _UpperLeft_X = Convert.ToDouble(imagePositionPatientArray[0], CultureInfo.InvariantCulture);
+            _UpperLeft_Y = Convert.ToDouble(imagePositionPatientArray[1], CultureInfo.InvariantCulture);
+            _UpperLeft_Z = Convert.ToDouble(imagePositionPatientArray[2], CultureInfo.InvariantCulture);
 
             string aPixelSpacingString = DICOMParserUtility.GetDICOMAttributeAsString(theXDocument, DICOMTAG.PIXEL_SPACING);
             string[] aPixelSpacingValueArray = aPixelSpacingString.Split('\\');
@@ -79,6 +79,43 @@ namespace DICOMViewer.Helper
 
             _windowCenter = DICOMParserUtility.GetDICOMAttributeAsInt(_XDocument, DICOMTAG.WINDOW_CENTER);
             _windowWidth  = DICOMParserUtility.GetDICOMAttributeAsInt(_XDocument, DICOMTAG.WINDOW_WIDTH);
+        }
+
+        public CTSliceInfo(CTSliceInfo ct)
+        {
+            _XDocument = ct._XDocument;
+            _FileName = ct._FileName;
+
+            _ColumnCount = ct._ColumnCount;
+            _RowCount = ct._RowCount;
+            _SliceLoc = ct._SliceLoc;
+
+            _UpperLeft_X = ct._UpperLeft_X;
+            _UpperLeft_Y = ct._UpperLeft_Y;
+            _UpperLeft_Z = ct._UpperLeft_Z;
+
+            _PixelSpacing_X = ct._PixelSpacing_X;
+            _PixelSpacing_Y = ct._PixelSpacing_Y;
+
+            _windowCenter = ct._windowCenter;
+            _windowWidth  = ct._windowWidth;
+
+            // no deep copy
+            _HounsfieldPixelBuffer = ct._HounsfieldPixelBuffer;
+        }
+
+        public CTSliceInfo Clone()
+        {
+            CTSliceInfo ct = new CTSliceInfo(this);
+
+            if (_HounsfieldPixelBuffer != null)
+            {
+                // make deep copy
+                ct._HounsfieldPixelBuffer = new short[_RowCount, _ColumnCount];
+                Buffer.BlockCopy(_HounsfieldPixelBuffer, 0, ct._HounsfieldPixelBuffer, 0, _HounsfieldPixelBuffer.Length);
+            }
+
+            return ct;
         }
 
         // This method has to be called before the marching cubes algorithm is called.
