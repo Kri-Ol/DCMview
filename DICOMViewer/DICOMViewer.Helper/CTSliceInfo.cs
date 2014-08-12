@@ -54,7 +54,17 @@ namespace DICOMViewer.Helper
         public int WindowCenter { get { return _windowCenter; } }
         public int WindowWidth  { get { return _windowWidth; } }
 
-        public short[,] HounsfieldPixelBuffer { get { return _HounsfieldPixelBuffer; } }
+        public short[,] HounsfieldPixelBuffer
+        {
+            get
+            {
+                return _HounsfieldPixelBuffer;
+            }
+            set
+            {
+                _HounsfieldPixelBuffer = value;
+            }
+        }
 
         public CTSliceInfo(XDocument theXDocument, string theFileName)
         {

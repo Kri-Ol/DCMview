@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
@@ -135,7 +134,12 @@ namespace DICOMViewer.Helper
         // Helper method, which returns the pixel data of a CT slice as gray-scale bitmap.
         public static WriteableBitmap GetPixelBufferAsBitmap(CTSliceInfo ct)
         {
+            GaussBlur gb = new GaussBlur(1.0f, (float)ct.PixelSpacing_X, 5);
+
             int windowLeftBorder = ct.WindowCenter - (ct.WindowWidth / 2);
+
+            short[,] bm = Apply(ct, gb);
+            ct.HounsfieldPixelBuffer = bm;
 
             byte[,] normalizedPixelBuffer = BuildNormalizedPixelBuffer(ct, ct.WindowCenter, ct.WindowWidth, windowLeftBorder);
 
@@ -157,6 +161,7 @@ namespace DICOMViewer.Helper
             float[,] blur = gb.blur;
 
             short[,] bm = new short[nr, nc];
+            int l = bm.Length;
             Array.Clear(bm, 0, bm.Length);
 
             for (int r = br; r != nr-br; ++r)

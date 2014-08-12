@@ -29,6 +29,8 @@ namespace DICOMViewer
         private IODRepository         _IODRepo = null;
         private CTSliceInfoCollection _scol    = null;
         private ContourCollection     _ccol    = null;
+
+        private CTSliceInfo           _curCT = null;
 #endregion
 
         public MainWindow()
@@ -73,40 +75,40 @@ namespace DICOMViewer
                 this._IODTree.Items.Clear();
 
                 string aSelectedFilePath = dialog.SelectedPath;
-                string[] aFileNameList = Directory.GetFiles(aSelectedFilePath, "*.dcm", SearchOption.AllDirectories);
+                string[] fileNameList = Directory.GetFiles(aSelectedFilePath, "*.dcm", SearchOption.AllDirectories);
 
                 // For each physical DICOM file, an own IOD object is created.
                 // After parsing the DICOM file, the newly created IOD is added to the IOD Repository.
-                foreach (string aFileName in aFileNameList)
-                    mIODRepository.Add(new IOD(aFileName));
+                foreach (string fileName in fileNameList)
+                    mIODRepository.Add(new IOD(fileName));
 
                 // All DICOM files are now parsed. 
                 // The IOD Repository is queried in order to build up the IOD model.
                 // The grouping of the IOD's is as follows: Patient-SOPClass-Study-Series.
-                foreach (string aPatientName in mIODRepository.GetPatients())
+                foreach (string patientName in mIODRepository.GetPatients())
                 {
-                    TreeViewItem aPatientItem = new TreeViewItem() { Header = aPatientName };
-                    this._IODTree.Items.Add(aPatientItem);
+                    TreeViewItem patientItem = new TreeViewItem() { Header = patientName };
+                    this._IODTree.Items.Add(patientItem);
 
-                    foreach (string aSOPClass in mIODRepository.GetSOPClassNames(aPatientName))
+                    foreach (string aSOPClass in mIODRepository.GetSOPClassNames(patientName))
                     {
-                        TreeViewItem aSOPClassItem = new TreeViewItem() { Header = aSOPClass };
-                        aPatientItem.Items.Add(aSOPClassItem);
+                        TreeViewItem SOPClassItem = new TreeViewItem() { Header = aSOPClass };
+                        patientItem.Items.Add(SOPClassItem);
 
-                        foreach (string aStudy in mIODRepository.GetStudies(aPatientName, aSOPClass))
+                        foreach (string aStudy in mIODRepository.GetStudies(patientName, aSOPClass))
                         {
-                            TreeViewItem aStudyItem = new TreeViewItem() { Header = string.Format(@"Study: '{0}'", aStudy) };
-                            aSOPClassItem.Items.Add(aStudyItem);
+                            TreeViewItem studyItem = new TreeViewItem() { Header = string.Format(@"Study: '{0}'", aStudy) };
+                            SOPClassItem.Items.Add(studyItem);
 
-                            foreach (string aSeries in mIODRepository.GetSeries(aPatientName, aSOPClass, aStudy))
+                            foreach (string aSeries in mIODRepository.GetSeries(patientName, aSOPClass, aStudy))
                             {
                                 TreeViewItem aSeriesItem = new TreeViewItem() { Header = string.Format(@"Series: '{0}'", aSeries) };
-                                aStudyItem.Items.Add(aSeriesItem);
+                                studyItem.Items.Add(aSeriesItem);
 
-                                foreach (IOD aIOD in mIODRepository.GetIODs(aPatientName, aSOPClass, aStudy, aSeries))
+                                foreach (IOD IOD in mIODRepository.GetIODs(patientName, aSOPClass, aStudy, aSeries))
                                 {
-                                    TreeViewItem anIOD = new TreeViewItem() { Header = string.Format(@"{0}", aIOD.SOPInstanceUID) };
-                                    anIOD.Tag = aIOD;
+                                    TreeViewItem anIOD = new TreeViewItem() { Header = string.Format(@"{0}", IOD.SOPInstanceUID) };
+                                    anIOD.Tag = IOD;
                                     aSeriesItem.Items.Add(anIOD);
                                 }
                             }
@@ -236,11 +238,14 @@ namespace DICOMViewer
                 _Grid.RowDefinitions.Last().Height  = new GridLength(ct.RowCount+16);
 
                 _Image.Source = CTSliceHelpers.GetPixelBufferAsBitmap(ct);
+                _curCT = ct;
             }
             else
             {
                 _Grid.RowDefinitions.First().Height = new GridLength(0);
                 _Grid.RowDefinitions.Last().Height  = new GridLength(0);
+
+                _curCT = null;
             }
         }
 
@@ -424,6 +429,23 @@ namespace DICOMViewer
             }
             else
                 System.Windows.MessageBox.Show("The series does not have suffcient CT Slices in order to generate a Volume View!");
+        }
+
+        private void _imageMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            int column = (int)e.GetPosition(_Image).X;
+            int row    = (int)e.GetPosition(_Image).Y;
+
+            /// double h = _Image.Height;
+            /// double w = _Image.Width;
+
+            short HUa = _curCT.GetHounsfieldPixelValue(row, column);
+            short HUb = _curCT.GetHounsfieldPixelValue(column, row);
+            //short HUb = _curCT.GetHounsfieldPixelValue(511 - row, 511 - column);
+            //short HUc = _curCT.GetHounsfieldPixelValue(row, 511 - column);
+            //short HUd = _curCT.GetHounsfieldPixelValue(511 - row, column);
+
+            _labelHU.Content = String.Format("{0},{1}: {2} {3}", row, column, HUa, HUb);
         }
     }
 }

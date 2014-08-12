@@ -34,12 +34,13 @@
                 <RowDefinition Height="0" />
             </Grid.RowDefinitions>
 
-            <Button Grid.Row="0" Height="25" Width="150" Margin="5,5,5,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonImageFlow_Click">Show ImageFlow...</Button>
-            <Button Grid.Row="0" Height="25" Width="150" Margin="160,5,5,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonVolumeBones_Click">Show Volume (Bones)...</Button>
-            <Button Grid.Row="0" Height="25" Width="150" Margin="315,5,5,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonVolumeSkin_Click">Show Volume (Skin)...</Button>
-            <Button Grid.Row="0" Height="25" Width="150" Margin="470,5,5,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonRBF_Click">Show VOI ...</Button>
+            <Button Grid.Row="0" Name="_buttonIF" Height="25" Width="150" Margin="5,5,5,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonImageFlow_Click">Show ImageFlow...</Button>
+            <Button Grid.Row="0" Name="_buttonBones" Height="25" Width="150" Margin="160,5,5,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonVolumeBones_Click">Show Volume (Bones)...</Button>
+            <Button Grid.Row="0" Name="_buttonSkin" Height="25" Width="150" Margin="315,5,5,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonVolumeSkin_Click">Show Volume (Skin)...</Button>
+            <Button Grid.Row="0" Name="_buttonVOI" Height="25" Width="150" Margin="470,5,5,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="ButtonRBF_Click">Show VOI ...</Button>
+            <Label  Grid.Row="0" Name="_labelHU" Height="25" Width="190" Margin="5,5,5,0" HorizontalAlignment="Right" VerticalAlignment="Top">0,0</Label>
             <TreeView Grid.Row="1" Name="_DICOMTagTree" Margin="5,5,5,5" BorderThickness="0" FontSize="12" FontFamily="Courier New" HorizontalAlignment="Stretch"/>
-            <Image Grid.Row="2" Name="_Image" Margin="5,5,5,10" Height="512" HorizontalAlignment="Center"/>
+            <Image Grid.Row="2" Name="_Image" Margin="5,5,5,10" Height="512" MouseLeftButtonDown="_imageMouseLeftButtonDown" HorizontalAlignment="Center"/>
         </Grid>
         <GridSplitter Grid.Row="1" Grid.Column="0" Width="2" />
     </Grid>

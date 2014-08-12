@@ -23,6 +23,8 @@ namespace DICOMViewer.Helper
             Debug.Assert(sz > 0.0f);
             Debug.Assert(dim > 0);
 
+            _sigma = sigma;
+
             _br = dim / 2;
             _bc = dim / 2;
 
@@ -33,14 +35,16 @@ namespace DICOMViewer.Helper
             float norm = 0.0f;
             for (int r = -_br; r <= _br; ++r)
             {
+                int ir = r + _br; Debug.Assert(ir >= 0); Debug.Assert(ir < dim);
                 float y = (float)r * sz;
-                for (int c = -_bc; r <= _bc; ++c)
+                for (int c = -_bc; c <= _bc; ++c)
                 {
+                    int ic = c + _bc; Debug.Assert(ic >= 0); Debug.Assert(ic < dim);
                     float x = (float)c * sz;
 
                     float t = (x * x + y * y) * 0.5f / (_sigma * _sigma);
                     float q = (float)Math.Exp(-t) * invtwopis;
-                    _blur[r + _br, c + _bc] = q;
+                    _blur[ir, ic] = q;
                     norm += q;
                 }
             }
@@ -48,9 +52,11 @@ namespace DICOMViewer.Helper
 
             for (int r = -_br; r <= _br; ++r)
             {
-                for (int c = -_bc; r <= _bc; ++c)
+                int ir = r + _br;
+                for (int c = -_bc; c <= _bc; ++c)
                 {
-                    _blur[r + _br, c + _bc] *= norm;
+                    int ic = c + _bc;
+                    _blur[ir, ic] *= norm;
                 }
             }
         }
