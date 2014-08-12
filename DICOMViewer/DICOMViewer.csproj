@@ -113,6 +113,7 @@
     <Compile Include="DICOMViewer.Helper\CTSliceHelpers.cs" />
     <Compile Include="DICOMViewer.Helper\CTSliceInfo.cs" />
     <Compile Include="DICOMViewer.Helper\CTSliceInfoCollection.cs" />
+    <Compile Include="DICOMViewer.Helper\GaussBlur.cs" />
     <Compile Include="DICOMViewer.Parsing\DICOMParser.cs" />
     <Compile Include="DICOMViewer.Parsing\DICOMTagInfo.cs" />
     <Compile Include="DICOMViewer.Parsing\DICOMtags.cs" />

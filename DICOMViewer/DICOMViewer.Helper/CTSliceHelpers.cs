@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
@@ -141,6 +142,45 @@ namespace DICOMViewer.Helper
             WriteableBitmap bitmap = BuildGrey16Bitmap(ct, normalizedPixelBuffer);
 
             return bitmap;
+        }
+
+        public static short[,] Apply(CTSliceInfo ct, GaussBlur gb)
+        {
+            short[,] hmap = ct.HounsfieldPixelBuffer;
+
+            int nr = ct.RowCount;
+            int nc = ct.ColumnCount;
+
+            int br = gb.br;
+            int bc = gb.bc;
+
+            float[,] blur = gb.blur;
+
+            short[,] bm = new short[nr, nc];
+            Array.Clear(bm, 0, bm.Length);
+
+            for (int r = br; r != nr-br; ++r)
+            {
+                for (int c = bc; c != nc-bc; ++c)
+                {
+                    float s = 0.0f;
+
+                    for (int ir = -br; ir <= br; ++ir)
+                    {
+                        int sr = r + ir;
+                        for (int ic = -bc; ic <= bc; ++ic)
+                        {
+                            int sc = c + ic;
+
+                            s += (float)hmap[sr, sc] * blur[ir + br, ic + bc];
+                        }
+                    }
+
+                    bm[r, c] = (short)(s + 0.5f);
+                }
+            }
+
+            return bm;
         }
     }
 }
