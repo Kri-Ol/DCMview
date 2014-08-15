@@ -111,10 +111,10 @@ namespace DICOMViewer.Helper
             {
                 for (int c = 0; c != ct.ColumnCount; ++c)
                 {
-                    ushort aGrayValue = (ushort)(ct[r, c] + 1024);
+                    ushort grayValue = (ushort)(ct[r, c] + 1024);
 
-                    imageDataArray[i * 2 + 0] = (byte)((aGrayValue >> 8) & 0x00FF);
-                    imageDataArray[i * 2 + 1] = (byte)(aGrayValue & 0x00FF);
+                    imageDataArray[i * 2 + 0] = (byte)((grayValue >> 8) & 0x00FF);
+                    imageDataArray[i * 2 + 1] = (byte)(grayValue & 0x00FF);
 
                     ++i;
                 }
@@ -134,12 +134,15 @@ namespace DICOMViewer.Helper
         // Helper method, which returns the pixel data of a CT slice as gray-scale bitmap.
         public static WriteableBitmap GetPixelBufferAsBitmap(CTSliceInfo ct)
         {
-            GaussBlur gb = new GaussBlur(1.0f, (float)ct.PixelSpacing_X, 5);
-
             int windowLeftBorder = ct.WindowCenter - (ct.WindowWidth / 2);
 
+            /*
+            GaussBlur gb = new GaussBlur(1.0f, (float)ct.PixelSpacing_X, 5);
+
             short[,] bm = Apply(ct, gb);
+
             ct.HounsfieldPixelBuffer = bm;
+            */
 
             byte[,] normalizedPixelBuffer = BuildNormalizedPixelBuffer(ct, ct.WindowCenter, ct.WindowWidth, windowLeftBorder);
 

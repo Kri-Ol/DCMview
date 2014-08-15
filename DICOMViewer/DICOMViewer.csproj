@@ -60,6 +60,7 @@
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq">
@@ -114,6 +115,7 @@
     <Compile Include="DICOMViewer.Helper\CTSliceInfo.cs" />
     <Compile Include="DICOMViewer.Helper\CTSliceInfoCollection.cs" />
     <Compile Include="DICOMViewer.Helper\GaussBlur.cs" />
+    <Compile Include="DICOMViewer.Helper\MooreNeighboor.cs" />
     <Compile Include="DICOMViewer.Parsing\DICOMParser.cs" />
     <Compile Include="DICOMViewer.Parsing\DICOMTagInfo.cs" />
     <Compile Include="DICOMViewer.Parsing\DICOMtags.cs" />
@@ -124,6 +126,7 @@
     <Compile Include="DICOMViewer.Parsing\TransferSyntaxDictionary.cs" />
     <Compile Include="DICOMViewer.ROIVOI\Contour.cs" />
     <Compile Include="DICOMViewer.ROIVOI\ContourCollection.cs" />
+    <Compile Include="DICOMViewer.ROIVOI\Couch.cs" />
     <Compile Include="DICOMViewer.ROIVOI\Directions.cs" />
     <Compile Include="DICOMViewer.Volume\EdgeTable.cs" />
     <Compile Include="DICOMViewer.Volume\MarchingCubes.cs" />

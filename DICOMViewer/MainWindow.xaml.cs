@@ -7,6 +7,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Xml.Linq;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 
 using DICOMViewer.Helper;
@@ -43,17 +45,17 @@ namespace DICOMViewer
         // build slice list for a given patient
         private void ProcessAllCTs(string aPatientName, IODRepository mIODRepository)
         {
-            foreach (string aSOPClass in mIODRepository.GetSOPClassNames(aPatientName))
+            foreach (string SOPClass in mIODRepository.GetSOPClassNames(aPatientName))
             {
-                foreach (string aStudy in mIODRepository.GetStudies(aPatientName, aSOPClass))
+                foreach (string Study in mIODRepository.GetStudies(aPatientName, SOPClass))
                 {
-                    foreach (string aSeries in mIODRepository.GetSeries(aPatientName, aSOPClass, aStudy))
+                    foreach (string Series in mIODRepository.GetSeries(aPatientName, SOPClass, Study))
                     {
-                        foreach (IOD aIOD in mIODRepository.GetIODs(aPatientName, aSOPClass, aStudy, aSeries))
+                        foreach (IOD IOD in mIODRepository.GetIODs(aPatientName, SOPClass, Study, Series))
                         {
-                            if (aIOD.IsPixelDataProcessable())
+                            if (IOD.IsPixelDataProcessable())
                             {
-                                CTSliceInfo aCTSliceInfo = new Helper.CTSliceInfo(aIOD.XDocument, aIOD.FileName);
+                                CTSliceInfo aCTSliceInfo = new Helper.CTSliceInfo(IOD.XDocument, IOD.FileName);
                                 _scol.Add(aCTSliceInfo);
                             }
                         }
@@ -64,18 +66,18 @@ namespace DICOMViewer
 
         private void MenuItem_LoadClick(object sender, RoutedEventArgs e)
         {
-            var dialog = new System.Windows.Forms.FolderBrowserDialog();
+            /// var dialog = new System.Windows.Forms.FolderBrowserDialog();
 
-            System.Windows.Forms.DialogResult result = dialog.ShowDialog();
-            if (result == System.Windows.Forms.DialogResult.OK)
+            /// System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+            if ( true /*result == System.Windows.Forms.DialogResult.OK*/)
             {
                 Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
 
                 IODRepository mIODRepository = new IODRepository();
                 this._IODTree.Items.Clear();
 
-                string aSelectedFilePath = dialog.SelectedPath;
-                string[] fileNameList = Directory.GetFiles(aSelectedFilePath, "*.dcm", SearchOption.AllDirectories);
+                string selectedFilePath = "C:\\Users\\Oleg\\Desktop\\DM1";// dialog.SelectedPath;
+                string[] fileNameList   = Directory.GetFiles(selectedFilePath, "*.dcm", SearchOption.AllDirectories);
 
                 // For each physical DICOM file, an own IOD object is created.
                 // After parsing the DICOM file, the newly created IOD is added to the IOD Repository.
@@ -102,14 +104,14 @@ namespace DICOMViewer
 
                             foreach (string aSeries in mIODRepository.GetSeries(patientName, aSOPClass, aStudy))
                             {
-                                TreeViewItem aSeriesItem = new TreeViewItem() { Header = string.Format(@"Series: '{0}'", aSeries) };
-                                studyItem.Items.Add(aSeriesItem);
+                                TreeViewItem SeriesItem = new TreeViewItem() { Header = string.Format(@"Series: '{0}'", aSeries) };
+                                studyItem.Items.Add(SeriesItem);
 
                                 foreach (IOD IOD in mIODRepository.GetIODs(patientName, aSOPClass, aStudy, aSeries))
                                 {
                                     TreeViewItem anIOD = new TreeViewItem() { Header = string.Format(@"{0}", IOD.SOPInstanceUID) };
                                     anIOD.Tag = IOD;
-                                    aSeriesItem.Items.Add(anIOD);
+                                    SeriesItem.Items.Add(anIOD);
                                 }
                             }
                         }
@@ -157,19 +159,19 @@ namespace DICOMViewer
         // Helper method to add one DICOM attribute to the DICOM Tag Tree.
         private void AddDICOMAttributeToTree(TreeViewItem theParentNode, XElement theXElement)
         {
-            string aTag = theXElement.Attribute("Tag").Value;
-            string aTagName = theXElement.Attribute("TagName").Value;
-            string aTagData = theXElement.Attribute("Data").Value;
+            string Tag = theXElement.Attribute("Tag").Value;
+            string TagName = theXElement.Attribute("TagName").Value;
+            string TagData = theXElement.Attribute("Data").Value;
 
             // Enrich the Transfer Syntax attribute (0002,0010) with human-readable string from dictionary
-            if (aTag.Equals("(0002,0010)"))
-                aTagData = string.Format("{0} ({1})", aTagData, TransferSyntaxDictionary.GetTransferSyntaxName(aTagData));
+            if (Tag.Equals("(0002,0010)"))
+                TagData = string.Format("{0} ({1})", TagData, TransferSyntaxDictionary.GetTransferSyntaxName(TagData));
 
             // Enrich the SOP Class UID attribute (0008,0016) with human-readable string from dictionary
-            if (aTag.Equals("(0008,0016)"))
-                aTagData = string.Format("{0} ({1})", aTagData, SOPClassDictionary.GetSOPClassName(aTagData));
+            if (Tag.Equals("(0008,0016)"))
+                TagData = string.Format("{0} ({1})", TagData, SOPClassDictionary.GetSOPClassName(TagData));
 
-            string s = string.Format("{0} {1}", aTag, aTagName);
+            string s = string.Format("{0} {1}", Tag, TagName);
 
             // Do some cut-off in order to allign the TagData
             if (s.Length > 50)
@@ -177,7 +179,7 @@ namespace DICOMViewer
             else
                 s = s.PadRight(50);
 
-            s = string.Format("{0} {1}", s, aTagData); 
+            s = string.Format("{0} {1}", s, TagData); 
 
             TreeViewItem aNewItem = new TreeViewItem() { Header = s };
             theParentNode.Items.Add(aNewItem);
@@ -372,6 +374,115 @@ namespace DICOMViewer
             CreateMaskedVolumeView(+500, mask, _scol.Slices);
         }
 
+        private static int SelectStartSlice(CTSliceInfo[] slices)
+        {
+            return slices.Length / 2;
+        }
+
+        private void ButtonLungs_Click(object sender, RoutedEventArgs e)
+        {
+            bool rc = _scol.BuildSortedSlicesArray();
+            if (!rc)
+            {
+                System.Windows.MessageBox.Show("There are skips in CTs!");
+                return;
+            }
+
+            CTSliceInfo[] slices = _scol.Slices;
+
+            // Step 1: find the couch
+            int sr = SelectStartSlice(slices);
+
+            CTSliceInfo ct = slices[sr];
+
+            int sc = Couch.DetectCouchInOneSlice(ct.HounsfieldPixelBuffer, ct.RowCount, ct.ColumnCount);
+            int scBefore = Couch.DetectCouchInOneSlice(slices[sr + 10].HounsfieldPixelBuffer, slices[sr + 10].RowCount, slices[sr + 10].ColumnCount);
+            int scAfter = Couch.DetectCouchInOneSlice(slices[sr - 10].HounsfieldPixelBuffer, slices[sr - 10].RowCount, slices[sr - 10].ColumnCount);
+
+            sc = Math.Max(Math.Max(sc, scBefore), scAfter);
+
+            // Step 2: Gaussian blur
+
+            GaussBlur gb = new GaussBlur((float)ct.PixelSpacing_X, (float)ct.PixelSpacing_X, 5);
+
+            for (int k = 0; k != slices.Length; ++k)
+            {
+                ct = slices[k];
+                short[,] bm = CTSliceHelpers.Apply(ct, gb);
+                ct.HounsfieldPixelBuffer = bm;
+            }
+
+            // Step 3: clear below the couch
+            for (int k = 0; k != slices.Length; ++k)
+            {
+                ct = slices[k];
+
+                short[,] hb = ct.HounsfieldPixelBuffer;
+
+                for (int r = ct.RowCount - 1; r > sc; --r)
+                {
+                    for (int c = 0; c != ct.ColumnCount; ++c)
+                    {
+                        hb[r, c] = -1024;
+                    }
+                }
+            }
+
+            // Step 4: gray level thresholding
+            for (int k = 0; k != slices.Length; ++k)
+            {
+                ct = slices[k];
+
+                Couch.GLThresholding(ct, sc, -499, 0, -499);
+            }
+
+            // Step 5: Flool fill
+            for (int k = 0; k != slices.Length; ++k)
+            {
+                ct = slices[k];
+
+                short[,] ret = Couch.FloodFill(ct.HounsfieldPixelBuffer, ct.RowCount, ct.ColumnCount,
+                                               3, 3, -499, 0);
+                ct.HounsfieldPixelBuffer = ret;
+            }
+
+            // Step 6: Contours via Moore Neighbour
+            for (int k = slices.Length-1; k >= slices.Length - 2; --k)
+            {
+                ct = slices[k];
+                int nr = ct.RowCount;
+                int nc = ct.ColumnCount;
+
+                int z     = ct.SliceLoc;
+                double zz = ct.UpperLeft_Z;
+
+                short[,] bm = ct.HounsfieldPixelBuffer;
+
+                bool[,] image = new bool[nr, nc];
+
+                for (int r = 0; r != nr; ++r)
+                {
+                    for (int c = 0; c != nc; ++c)
+                    {
+                        image[r, c] = false;
+                        if (bm[r, c] < 0)
+                            image[r, c] = true;
+                    }
+                }
+
+                System.Drawing.Point[] contour = MooreContour.Trace(image, nr, nc);
+
+
+                foreach(var pt in contour)
+                {
+                    int r = pt.Y;
+                    int c = pt.X;
+
+                    bm[r, c] = 500;
+                }
+            }
+        }
+
         // Helper method to create and show the Volume View Dialog
         private void CreateVolumeView(short theIsoValueInHounsfield, CTSliceInfo[] slices)
         {
@@ -431,21 +542,41 @@ namespace DICOMViewer
                 System.Windows.MessageBox.Show("The series does not have suffcient CT Slices in order to generate a Volume View!");
         }
 
+        /*
+        public static short PixelAt(WriteableBitmap bm, int nr, int nc, int r, int c)
+        {
+            PixelFormat pf = bm.Format;
+
+            bm.Lock();
+
+            short[] arr = new short[1];
+            bm.CopyPixels(new Int32Rect(r, c, 1, 1), arr,  );
+
+            IntPtr ptr = bm.BackBuffer;
+            short res = 0;
+
+            unsafe
+            {
+                short* pbuff = (short*)ptr.ToPointer();
+
+                pbuff += r * nc + c;
+
+                res = *pbuff;
+            }
+            bm.Unlock();
+
+            return res;
+        }
+        */
+
         private void _imageMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             int column = (int)e.GetPosition(_Image).X;
             int row    = (int)e.GetPosition(_Image).Y;
 
-            /// double h = _Image.Height;
-            /// double w = _Image.Width;
-
             short HUa = _curCT.GetHounsfieldPixelValue(row, column);
-            short HUb = _curCT.GetHounsfieldPixelValue(column, row);
-            //short HUb = _curCT.GetHounsfieldPixelValue(511 - row, 511 - column);
-            //short HUc = _curCT.GetHounsfieldPixelValue(row, 511 - column);
-            //short HUd = _curCT.GetHounsfieldPixelValue(511 - row, column);
 
-            _labelHU.Content = String.Format("{0},{1}: {2} {3}", row, column, HUa, HUb);
+            _labelHU.Content = String.Format("{0},{1}: {2}", row, column, HUa);
         }
     }
 }
